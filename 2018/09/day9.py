@@ -1,101 +1,53 @@
+from collections import deque
 from itertools import cycle
 
 
-class Marble:
-  __slots__ = ('value', 'prev', 'next')
-
-  def __init__(self, value, prev=None, next=None):
-    self.value = value
-    self.prev = prev
-    self.next = next
-
-  def __repr__(self):
-    return f'Marble({self.value})'
-
-
 class Circle:
-  __slots__ = ('current_marble', 'count')
+  __slots__ = ('ring')
 
   def __init__(self):
-    self.current_marble = None
-    self.count = 0
+    self.ring = deque()
 
   def add_marble(self, marble):
-    if self.current_marble == None:
-      marble.prev, marble.next = marble, marble
-      self.current_marble = marble
+    if len(self.ring) == 0:
+      self.ring.append(marble)
     else:
-      # Move one marble forward
-      self.current_marble = self.current_marble.next
-
-      # Place the new marble
-      next_marble = self.current_marble.next
-      marble.prev, marble.next = self.current_marble, next_marble
-      (
-          self.current_marble.next,
-          marble.prev,
-          marble.next,
-          next_marble.prev,
-          self.current_marble,
-          self.count,
-      ) = (
-           marble,
-           self.current_marble,
-           next_marble,
-           marble,
-           marble,
-           self.count + 1,
-      )
-    assert self.current_marble is not None
-    assert self.current_marble.next is not None
-    assert self.current_marble.prev is not None
+      self.ring.append(self.ring.popleft())
+      self.ring.append(marble)
 
   def take_marble(self):
-    assert self.current_marble is not None
     # Go back seven marbles
-    for _ in range(7):
-        self.current_marble = self.current_marble.prev
+    self.ring.rotate(7)
 
     # Take this marble
-    taken_marble = self.current_marble
+    taken_marble = self.ring.pop()
 
-    # Update links for surrounding marbles
-    prev_marble, next_marble = taken_marble.prev, taken_marble.next
-    (
-        prev_marble.next,
-        next_marble.prev,
-        self.current_marble,
-        self.count,
-    ) = (
-        next_marble,
-        prev_marble,
-        next_marble,
-        self.count + 1,
-    )
-
-    taken_marble.prev, taken_marble.next = None, None
+    # Move forward one
+    self.ring.append(self.ring.popleft())
     return taken_marble
 
 
 def run_game(player_count, marble_count):
-  current_marble = None
   circle_count = 0
   player_score = {}
   circle = Circle()
   for marble, player in zip(range(0, marble_count + 1), cycle(range(player_count))):
     assert player < player_count
     assert marble <= marble_count
+
+    # Special case for marble 0 since it is divisible by 23
     if marble == 0:
-      circle.add_marble(Marble(marble))
+      circle.add_marble(marble)
       continue
+
     if marble % 23 == 0:
-      # special case
       taken_marble = circle.take_marble()
       if player not in player_score:
         player_score[player] = 0
-      player_score[player] += marble + taken_marble.value
+      player_score[player] += marble + taken_marble
       continue
-    circle.add_marble(Marble(marble))
+
+    circle.add_marble(marble)
   return player_score
 
 
