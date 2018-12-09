@@ -1,4 +1,4 @@
-from collections import deque
+from collections import deque, defaultdict
 from itertools import cycle
 
 
@@ -29,7 +29,7 @@ class Circle:
 
 def run_game(player_count, marble_count):
   circle_count = 0
-  player_score = {}
+  player_score = defaultdict(lambda: 0)
   circle = Circle()
   for marble, player in zip(range(0, marble_count + 1), cycle(range(player_count))):
     assert player < player_count
@@ -42,8 +42,6 @@ def run_game(player_count, marble_count):
 
     if marble % 23 == 0:
       taken_marble = circle.take_marble()
-      if player not in player_score:
-        player_score[player] = 0
       player_score[player] += marble + taken_marble
       continue
 
