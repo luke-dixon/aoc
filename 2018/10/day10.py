@@ -102,19 +102,15 @@ for i in range(5):
 
 def draw(stars):
   range_x, range_y = find_star_range(stars)
-  # Hope the stars all have positive locations
-  # For my data set they do, I should probably account for that though
-  assert range_x[0] > 0 and range_x[1] > 0
-  assert range_y[0] > 0 and range_y[1] > 0
   star_map = []
-  for i in range(range_y[1] + 1):
+  for i in range(abs(range_y[0]) + range_y[1] + 1):
     star_map.append([])
-    for j in range(range_x[1] + 1):
+    for j in range(abs(range_x[0]) + range_x[1] + 1):
       star_map[i].append(' ')
   for star in stars:
-    star_map[star.y][star.x] = '*'
-  for row in star_map[range_y[0]:]:
-    print(''.join(row[range_x[0]:]))
+    star_map[star.y + abs(range_y[0])][star.x + abs(range_x[0])] = '*'
+  for row in star_map[range_y[0] + abs(range_y[0]):]:
+    print(''.join(row[range_x[0] + abs(range_x[0]):]))
 
 
 for i in range(3):
