@@ -40,13 +40,11 @@ m = sqmatrix_sum_squares(l, 3)
 for y in range(len(m)):
     for x in range(len(m)):
         if m[y][x] > max_powerlevel:
-            print(f'new max: {m[y][x]}, {x + 1},{y + 1},3')
             max_coords = (x + 1, y + 1)
             max_powerlevel = m[y][x]
 
 
-print(max_powerlevel)
-print(max_coords)
+print(f'Day 11 Part 1 Answer: {max_coords[0]},{max_coords[1]}')
 
 max_powerlevel = -0xfffffff
 max_coords = (0, 0)
@@ -54,7 +52,7 @@ max_size = 1
 
 sum_matrix = sqmatrix_sum_squares(l, 2)
 
-for size in range(3, len(l)):
+for size in range(3, len(l) + 1):
     print(f'size: {size}')
 
     # Remove a row and column from the sum matrix
@@ -63,17 +61,21 @@ for size in range(3, len(l)):
         row.pop()
 
     # For each sum in the sum matrix, add another layer
+    ws = [sum([l[i][size - 1 + j] for i in range(0, size - 1)]) for j in range(len(l) - size + 1)]
     for y in range(len(l) - size + 1):
+        h = sum([l[size - 1 + y][i] for i in range(0, size - 1)])
         for x in range(len(l) - size + 1):
-            h = sum([l[size - 1 + y][i] for i in range(x, x + size - 1)])
-            w = sum([l[i][size - 1 + x] for i in range(y, y + size - 1)])
+            w = ws[x]
             sum_matrix[y][x] += h + w + l[y + size - 1][x + size - 1]
             if sum_matrix[y][x] > max_powerlevel:
                 max_coords = (x + 1, y + 1)
                 max_powerlevel = sum_matrix[y][x]
+                max_size = size
                 print(f'new max: {max_powerlevel}, ({max_coords}), {size}')
+            h -= l[size - 1 + y][x]
+            h += l[size - 1 + y][min(x + size, x + size - 1)]
+        for w in range(len(ws)):
+            ws[w] -= l[y][size - 1 + w]
+            ws[w] += l[y + size - 1][size - 1 + w]
 
-
-print(max_powerlevel)
-print(max_coords)
-print(max_size)
+print(f'Day 11 Part 2 Answer: {max_coords[0]},{max_coords[1]},{max_size}')
