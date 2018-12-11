@@ -1,7 +1,3 @@
-from itertools import chain
-from functools import lru_cache
-
-
 with open('input11.txt') as f:
   data = int(f.read().strip())
 
@@ -52,7 +48,8 @@ max_size = 1
 
 sum_matrix = sqmatrix_sum_squares(l, 2)
 
-for size in range(3, len(l) + 1):
+for size in range(2, len(l) + 1):
+    next_size = size + 1
     print(f'size: {size}')
 
     # Remove a row and column from the sum matrix
@@ -61,21 +58,21 @@ for size in range(3, len(l) + 1):
         row.pop()
 
     # For each sum in the sum matrix, add another layer
-    ws = [sum([l[i][size - 1 + j] for i in range(0, size - 1)]) for j in range(len(l) - size + 1)]
-    for y in range(len(l) - size + 1):
-        h = sum([l[size - 1 + y][i] for i in range(0, size - 1)])
-        for x in range(len(l) - size + 1):
+    ws = [sum([l[i][size + j] for i in range(0, size)]) for j in range(len(l) - next_size + 1)]
+    for y in range(len(l) - next_size + 1):
+        h = sum([l[size + y][i] for i in range(0, size)])
+        for x in range(len(l) - next_size + 1):
             w = ws[x]
-            sum_matrix[y][x] += h + w + l[y + size - 1][x + size - 1]
+            sum_matrix[y][x] += h + w + l[y + size][x + size]
             if sum_matrix[y][x] > max_powerlevel:
                 max_coords = (x + 1, y + 1)
                 max_powerlevel = sum_matrix[y][x]
-                max_size = size
-                print(f'new max: {max_powerlevel}, ({max_coords}), {size}')
-            h -= l[size - 1 + y][x]
-            h += l[size - 1 + y][min(x + size, x + size - 1)]
+                max_size = next_size
+                print(f'new max: {max_powerlevel}, ({max_coords}), {next_size}')
+            h -= l[size + y][x]
+            h += l[size + y][min(x + next_size, x + size)]
         for w in range(len(ws)):
-            ws[w] -= l[y][size - 1 + w]
-            ws[w] += l[y + size - 1][size - 1 + w]
+            ws[w] -= l[y][size + w]
+            ws[w] += l[y + size][size + w]
 
 print(f'Day 11 Part 2 Answer: {max_coords[0]},{max_coords[1]},{max_size}')
