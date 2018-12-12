@@ -77,15 +77,11 @@ print(f'Day 12 part 1 answer: {totals[-1]}')
 
 num_generations_until_today = 50000000000
 
-# Guess it has stabilised after we see it grow the same amount 10 times
-# There's got to be a better way than this to work out growth has stabilised
-max_same_growth = 10
-same_growth = 0
-
 # Run up to the required amount of generations
 rate_of_change = totals[-1] - totals[-2]
 gen = 20
 for gen in range(gen, num_generations_until_today):
+    old_state = list(state)
     state = run_next_generation(state, rules, gen)
     pot_0_index = expand_pots(state, pot_0_index)
     calculate_totals(totals, state, pot_0_index)
@@ -94,11 +90,14 @@ for gen in range(gen, num_generations_until_today):
     old_rate_of_change = rate_of_change
     rate_of_change = totals[-1] - totals[-2]
     if old_rate_of_change == rate_of_change:
-        same_growth += 1
-    else:
-        same_growth = 0
-    if same_growth > max_same_growth:
-        break
+        s1, s2 = ''.join(old_state), ''.join(state)
+        s1 = s1[s1.index('#'):s1.rindex('#') + 1]
+        s2 = s2[s2.index('#'):s2.rindex('#') + 1]
+        assert s1[-1] == '#' and s2[-1] == '#'
+        assert s1[0] == '#' and s2[0] == '#'
+        if s1 == s2:
+            break
+
 
 part2_answer = (num_generations_until_today - gen) * rate_of_change + totals[gen]
 print(f'Day 12 part 2 answer: {part2_answer}')
