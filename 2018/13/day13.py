@@ -57,6 +57,12 @@ turn_straight = {
     Direction.DOWN: Direction.DOWN,
 }
 
+turn_plus = {
+    0: turn_left,
+    1: turn_straight,
+    2: turn_right,
+}
+
 
 class Cart:
     def __init__(self, y, x, direction, carts_locations):
@@ -66,6 +72,12 @@ class Cart:
         self.carts_locations = carts_locations
         self.set_pos(y, x)
 
+        self.update_choice_table = {
+            '<^v>-|': self.update_straight,
+            ''.join(static_choices.keys()): self.update_turn,
+            '+': self.update_plus,
+        }
+
     def set_pos(self, y, x):
         if (self.y, self.x) in self.carts_locations:
             del self.carts_locations[(self.y, self.x)]
@@ -74,32 +86,30 @@ class Cart:
             raise CrashDetected(y, x, [self.carts_locations[(self.y, self.x)], self])
         self.carts_locations[(y, x)] = self
 
+    def update_straight(self, current_square):
+        y = self.y + self.direction.value[0]
+        x = self.x + self.direction.value[1]
+        self.set_pos(y, x)
+
+    def update_turn(self, current_square):
+        self.direction = static_choices[current_square][self.direction]
+        y = self.y + self.direction.value[0]
+        x = self.x + self.direction.value[1]
+        self.set_pos(y, x)
+
+    def update_plus(self, current_square):
+        self.direction = turn_plus[self.points_choice % 3][self.direction]
+        y = self.y + self.direction.value[0]
+        x = self.x + self.direction.value[1]
+        self.set_pos(y, x)
+        self.points_choice = (self.points_choice + 1) % 3
+
     def update(self, grid):
         current_square = grid[self.y][self.x]
-        if current_square in '<^v>-|':
-            y = self.y + self.direction.value[0]
-            x = self.x + self.direction.value[1]
-            self.set_pos(y, x)
-            return
-        if current_square in static_choices:
-            self.direction = static_choices[current_square][self.direction]
-            y = self.y + self.direction.value[0]
-            x = self.x + self.direction.value[1]
-            self.set_pos(y, x)
-            return
-        if current_square == '+':
-            if self.points_choice % 3 == 0:
-                self.direction = turn_left[self.direction]
-            elif self.points_choice % 3 == 1:
-                self.direction = turn_straight[self.direction]
-            elif self.points_choice % 3 == 2:
-                self.direction = turn_right[self.direction]
-            else:
-                assert False
-            y = self.y + self.direction.value[0]
-            x = self.x + self.direction.value[1]
-            self.set_pos(y, x)
-            self.points_choice = (self.points_choice + 1) % 3
+        for update_choice in self.update_choice_table:
+            if current_square in update_choice:
+                self.update_choice_table[update_choice](current_square)
+                return
 
     def __repr__(self):
         return f'Cart({self.x}, {self.y}, {self.direction}, {self.points_choice})'
@@ -109,9 +119,6 @@ class Cart:
 with open('input13.txt') as f:
     data = [x.strip('\n') for x in f.readlines()]
 
-#for row in data:
-#    print(row)
-
 
 carts = []
 carts_locations = {}
@@ -119,7 +126,6 @@ for y, row in enumerate(data):
     for x, c in enumerate(row):
         if c in cart_directions:
             carts.append(Cart(y, x, cart_directions[c], carts_locations))
-
 
 tick = 1
 
