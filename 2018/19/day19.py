@@ -118,6 +118,23 @@ def sum_divisors(value):
     return s
 
 
+def run_program(reg, program, instruction_pointer_index):
+    instruction_pointer = reg[instruction_pointer_index]
+
+    while 0 <= instruction_pointer < len(program):
+        reg[instruction_pointer_index] = instruction_pointer
+        op, a, b, c = program[instruction_pointer]
+        instruction_set[op](reg, a, b, c)
+        instruction_pointer = reg[instruction_pointer_index]
+        instruction_pointer += 1
+        if instruction_pointer == 3:
+            break
+    print(reg[4])
+    reg[0] = sum_divisors(reg[4])
+    reg[1] = reg[4] + 1
+    reg[3] = reg[4] + 1
+
+
 def main():
     with open('input19.txt') as f:
         data = f.read().rstrip('\n').splitlines()
@@ -134,36 +151,15 @@ def main():
     reg = [0, 0, 0, 0, 0, 0]
     instruction_pointer = reg[instruction_pointer_index]
 
-    while 0 <= instruction_pointer < len(data):
-        reg[instruction_pointer_index] = instruction_pointer
-        op, a, b, c = program[instruction_pointer]
-        instruction_set[op](reg, a, b, c)
-        instruction_pointer = reg[instruction_pointer_index]
-        instruction_pointer += 1
+    run_program(reg, program, instruction_pointer_index)
+
     # print(f'reg: {reg}, ip: {instruction_pointer}')
     print(f'Day 19 Answer 1 reg: {reg[0]}')
 
     reg = [1, 0, 0, 0, 0, 0]
     instruction_pointer = reg[instruction_pointer_index]
 
-    #print(f'reg: {reg}, ip: {instruction_pointer}')
-    while 0 <= instruction_pointer < len(data):
-        reg[instruction_pointer_index] = instruction_pointer
-        op, a, b, c = program[instruction_pointer]
-        instruction_set[op](reg, a, b, c)
-        instruction_pointer = reg[instruction_pointer_index]
-        instruction_pointer += 1
-
-        # Last part of the instructions run then jump to first part
-        # which is just the sum of the divisors
-        # The program never goes back to the last part so we can
-        # quit out here.
-        if instruction_pointer == 3:
-            break
-
-    reg[0] = sum_divisors(reg[4])
-    reg[1] = reg[4] + 1
-    reg[3] = reg[4] + 1
+    run_program(reg, program, instruction_pointer_index)
 
     print(f'Day 19 Answer 1 reg: {reg[0]}')
 
