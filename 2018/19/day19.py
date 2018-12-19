@@ -118,7 +118,7 @@ def sum_divisors(value):
     return s
 
 
-def run_program(reg, program, instruction_pointer_index):
+def run_program(reg, program, instruction_pointer_index, optimize=False):
     instruction_pointer = reg[instruction_pointer_index]
 
     while 0 <= instruction_pointer < len(program):
@@ -127,12 +127,11 @@ def run_program(reg, program, instruction_pointer_index):
         instruction_set[op](reg, a, b, c)
         instruction_pointer = reg[instruction_pointer_index]
         instruction_pointer += 1
-        if instruction_pointer == 3:
+        if optimize and instruction_pointer == 5:
             break
-    print(reg[4])
-    reg[0] = sum_divisors(reg[4])
-    reg[1] = reg[4] + 1
-    reg[3] = reg[4] + 1
+    print(f'Finding sum of divisors for {reg[b]}')
+    if optimize:
+        reg[0] = sum_divisors(reg[b])
 
 
 def main():
@@ -151,7 +150,7 @@ def main():
     reg = [0, 0, 0, 0, 0, 0]
     instruction_pointer = reg[instruction_pointer_index]
 
-    run_program(reg, program, instruction_pointer_index)
+    run_program(reg, program, instruction_pointer_index, optimize=True)
 
     # print(f'reg: {reg}, ip: {instruction_pointer}')
     print(f'Day 19 Answer 1 reg: {reg[0]}')
@@ -159,9 +158,9 @@ def main():
     reg = [1, 0, 0, 0, 0, 0]
     instruction_pointer = reg[instruction_pointer_index]
 
-    run_program(reg, program, instruction_pointer_index)
+    run_program(reg, program, instruction_pointer_index, optimize=True)
 
-    print(f'Day 19 Answer 1 reg: {reg[0]}')
+    print(f'Day 19 Answer 2 reg: {reg[0]}')
 
 if __name__ == "__main__":
     main()
