@@ -13,7 +13,7 @@ for d in data.split():
   if 3 in values:
     threes += 1
 
-print(twos, ' x ', threes, ' = ', twos * threes)
+print(f'Part 1 Answer: {twos * threes}')
 
 
 sorted_data = sorted(data.split())
@@ -28,7 +28,5 @@ for i in range(len(sorted_data)):
         diff += 1
         diff_index = n
     if diff == 1:
-      print(sorted_data[i])
-      print(sorted_data[j])
-      print(('-' * diff_index) + '^')
-      print(sorted_data[i][:diff_index] + sorted_data[i][diff_index + 1:])
+      answer = sorted_data[i][:diff_index] + sorted_data[i][diff_index + 1:]
+      print(f'Part 2 Answer: {answer}')
