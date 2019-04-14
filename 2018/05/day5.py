@@ -1,61 +1,56 @@
-with open('input5.txt') as f:
-  data = f.read().strip()
-
-def react1(d):
-  for i in range(len(d) - 1):
-    if d[i].islower() and d[i + 1].isupper():
-      if d[i].upper() == d[i + 1]:
-        return True, d[:i] + d[i+2:]
-    if d[i].isupper() and d[i + 1].islower():
-      if d[i].lower() == d[i + 1]:
-        return True, d[:i] + d[i+2:]
-  return False, d
+from collections import deque
 
 
+def react(polymer: str) -> str:
+    d = deque(polymer)
+    d.append('_')  # don't react start and end
+    old_len = len(d) + 1
+
+    # React until there is no change
+    while old_len != len(d):
+        i = 0
+        old_len = len(d)
+        while i < len(d):
+            x = d.popleft()
+            y = d.popleft()
+
+            if x.upper() == y.upper() and ((x.isupper() and y.islower()) or (x.islower() and y.isupper())):
+                # Reaction!
+                continue
+
+            # No reaction, put the units back and rotate
+            d.append(x)
+            d.appendleft(y)
+            i += 1
+        assert d[-1] == '_'
+
+    assert d[-1] == '_'
+    d.pop()
+    return ''.join(d)
 
 
-def react2(d):
-  reactions = False
-  reaction_this_cycle = False
-  i = 0
-  while i + 1 < len(d):
-    if d[i].islower() and d[i + 1].isupper():
-      if d[i].upper() == d[i + 1]:
-        reactions = True
-        reaction_this_cycle = True
-        d = d[:i] + d[i+2:]
-    elif d[i].isupper() and d[i + 1].islower():
-      if d[i].lower() == d[i + 1]:
-        reactions = True
-        reaction_this_cycle = True
-        d = d[:i] + d[i+2:]
-    if not reaction_this_cycle:
-      i += 1
-    reaction_this_cycle = False
-  if reactions:
-    return True, d
-  return False, d
+def main():
+    with open('input5.txt') as f:
+        unreacted_polymer = f.read().strip()
+
+    polymer = react(unreacted_polymer)
+    print(f'Day 5 Part 1 Answer: {len(polymer)}')
+
+    polymer_lengths: [str] = []
+    # for each polymer unit type
+    for unit_type in set(polymer.upper()):
+        # Create a shortened polymer with that unit type removed
+        shortened_polymer = polymer \
+            .replace(unit_type.upper(), '') \
+            .replace(unit_type.lower(), '')
+
+        # React the shortened polymer
+        reacted_polymer = react(shortened_polymer)
+        polymer_lengths.append(len(reacted_polymer))
+
+    # The answer is the shortest polymer
+    print(f'Day 5 Part 2 Answer {min(polymer_lengths)}')
 
 
-sample = data
-
-rc = True
-while rc:
-  rc, sample = react1(sample)
-
-#print(sample)
-print('Day 5 Part 1 Answer: ', len(sample))
-
-
-
-results = []
-for c in sorted(list(set(sample.upper()))):
-  sample2 = sample
-  sample2 = ''.join(sample2.split(c))
-  sample2 = ''.join(sample2.split(c.lower()))
-  rc = True
-  while rc:
-    rc, sample2 = react1(sample2)
-  results.append(len(sample2))
-
-print('Day 5 Part 2 Answer: ', min(results))
+if __name__ == '__main__':
+    main()
