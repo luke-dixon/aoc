@@ -12,10 +12,6 @@ class Halt(Exception):
     pass
 
 
-class Poison:
-    pass
-
-
 class Parameter:
     def __init__(self, data: List[int], position: int, mode: int):
         self.data = data
@@ -122,6 +118,8 @@ def halt(self: Instruction) -> int:
 
 def store(self: Instruction) -> int:
     value = self.input.read()
+    if isinstance(value, Exception):
+        raise value
     self.parameter1.set(value)
     return self.position + 2
 
@@ -279,7 +277,7 @@ class Day7(Puzzle):
                 thruster_inputs.append(thruster_input)
             finally:
                 for channel in channels:
-                    channel.put(Poison())
+                    channel.put(Halt())
                 for thread in threads:
                     thread.join()
 
