@@ -1,8 +1,7 @@
 import itertools
 import queue
 import threading
-from collections import defaultdict
-from typing import List, Callable, Dict
+from typing import List, Callable, Dict, Optional
 from ctypes import c_long as c_int
 
 from aocd.models import Puzzle
@@ -17,7 +16,7 @@ class Poison:
 
 
 class Parameter:
-    def __init__(self, data, position, mode):
+    def __init__(self, data: List[int], position: int, mode: int):
         self.data = data
         self.position = position
         self.mode = mode
@@ -28,7 +27,7 @@ class Parameter:
         else:
             return self.data[self.data[self.position]]
 
-    def set(self, value):
+    def set(self, value: int):
         if self.mode:
             self.data[self.position] = value
         else:
@@ -36,7 +35,18 @@ class Parameter:
 
 
 class Instruction:
-    def __init__(self, data, position, operation, input_, output, parameter1, parameter2, parameter3, idx):
+    def __init__(
+        self,
+        data: List[int],
+        position: int,
+        operation: Callable[['Instruction'], int],
+        input_,
+        output,
+        parameter1: Parameter,
+        parameter2: Parameter,
+        parameter3: Parameter,
+        idx: str,
+    ):
         self.idx = idx
         self.data = data
         self.position = position
@@ -68,16 +78,13 @@ def halt(self: Instruction) -> int:
 
 
 def store(self: Instruction) -> int:
-    #print(f'store: {self.input}, {self.output}')
     value = self.input.pop(0)
     self.parameter1.set(value)
     return self.position + 2
 
 
 def store_q(self: Instruction) -> int:
-    #print(f'{self.idx} receiving')
     value = self.input.get(timeout=5)
-    #print(f'{self.idx} received {value}')
     if type(value) == Poison:
         raise Halt
     self.parameter1.set(value)
@@ -85,11 +92,7 @@ def store_q(self: Instruction) -> int:
 
 
 def retrieve(self: Instruction) -> int:
-    #print(f'retrieve: {self.input}, {self.output}')
-    #print(self.parameter1.get())
     self.output.append(self.parameter1.get())
-    #print(self.parameter1.get())
-    #print(f'retrieve end: {self.input}, {self.output}')
     return self.position + 2
 
 
@@ -128,7 +131,7 @@ def equals(self: Instruction) -> int:
     return self.position + 4
 
 
-operations: Dict[int, Callable[[Instruction], int]] = {
+default_operations: Dict[int, Callable[[Instruction], int]] = {
     1: add,
     2: multiply,
     3: store,
@@ -153,7 +156,16 @@ operations_q: Dict[int, Callable[[Instruction], int]] = {
 }
 
 
-def instruction_factory(data, position, input_, output, idx=None, operations=operations):
+def instruction_factory(
+    data: List[int],
+    position: int,
+    input_,
+    output,
+    idx: Optional[str] = None,
+    operations: Optional[Dict[int, Callable[[Instruction], int]]] = None,
+):
+    if operations is None:
+        operations = default_operations
     opcode = str(data[position]).rjust(5, '0')
     return Instruction(
         data,
@@ -168,9 +180,10 @@ def instruction_factory(data, position, input_, output, idx=None, operations=ope
     )
 
 
-def run_intcode_computer(program, input_):
+def run_intcode_computer(program: List[int], input_):
     output = []
     position = 0
+    program = list(program)
     while True:
         instruction = instruction_factory(program, position, input_, output)
         try:
@@ -180,14 +193,16 @@ def run_intcode_computer(program, input_):
     return output
 
 
-def run_intcode_computer2(program, input_, output, idx):
+def run_intcode_computer2(program: List[int], input_, output, idx: str):
     position = 0
+    program = list(program)
     while True:
-        instruction = instruction_factory(program, position, input_, output, idx, operations=operations_q)
+        instruction = instruction_factory(
+            program, position, input_, output, idx, operations=operations_q
+        )
         try:
             position = instruction()
         except Halt:
-            #print(f'amplifier {idx} halted')
             break
     return output
 
@@ -199,46 +214,42 @@ class Day7(Puzzle):
 
     def part1(self):
         data = self.data
-        #data = [3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0]
-        #print(data)
 
         thruster_inputs = []
 
-        l = [0, 0]
         for i in itertools.permutations(range(5)):
-            l = [0, 0]
-            #print(f'permutation: {i}')
+            input_ = [0, 0]
             for phase in i:
-                l[0] = phase
-                #print(f'input: {l}')
-                output = run_intcode_computer(data, l)
-                #print(f'output {output}')
-                l = [None, output.pop()]
-            #print(f'thruster input: {l}')
-            thruster_inputs.append(l[1])
+                input_[0] = phase
+                output = run_intcode_computer(data, input_)
+                input_ = [None, output.pop()]
+            thruster_inputs.append(input_[1])
 
         return max(thruster_inputs)
 
     def part2(self):
         data = self.data
-        #data = [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
-        #data = [3,52,1001,52,-5,52,3,53,1,52,56,54,1007,54,5,55,1005,55,26,1001,54,-5,54,1105,1,12,1,53,54,53,1008,54,0,55,1001,55,1,55,2,53,55,53,4,53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10]
-        #print(data)
 
         thruster_inputs = []
 
         amplifier_indexes = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
 
         for i in itertools.permutations(range(5, 10)):
-            #print(f'permutation: {i}')
             threads = []
             channels = []
             for _ in range(5):
                 channels.append(queue.Queue())
             for channel_idx, phase in enumerate(i):
                 channels[channel_idx].put(phase)
-                #print(f'{amplifier_indexes.get(channel_idx)} -> {amplifier_indexes.get((channel_idx + 1) % len(channels))}')
-                t = threading.Thread(target=run_intcode_computer2, args=(data, channels[channel_idx], channels[(channel_idx + 1) % len(channels)], amplifier_indexes[channel_idx]))
+                t = threading.Thread(
+                    target=run_intcode_computer2,
+                    args=(
+                        data,
+                        channels[channel_idx],
+                        channels[(channel_idx + 1) % len(channels)],
+                        amplifier_indexes[channel_idx],
+                    ),
+                )
                 threads.append(t)
                 t.start()
             try:
@@ -246,13 +257,9 @@ class Day7(Puzzle):
                 amp_e = threads.pop()
                 amp_e.join()
                 amp_e_channel = channels.pop(0)
-                #print([q.empty() for q in channels])
-                thruster_input = amp_e_channel.get(timeout=1)
-                #print(f'thruster input: {thruster_input}')
+                thruster_input = amp_e_channel.get(timeout=5)
                 thruster_inputs.append(thruster_input)
-                for channel in channels:
-                    channel.put(Poison())
-            except KeyboardInterrupt:
+            finally:
                 for channel in channels:
                     channel.put(Poison())
                 for thread in threads:
