@@ -1,6 +1,7 @@
 import itertools
 import queue
 import threading
+from abc import ABC
 from typing import List, Callable, Dict, Optional
 from ctypes import c_long as c_int
 
@@ -61,6 +62,48 @@ class Instruction:
         return self.operation(self)
 
 
+class InputDevice(ABC):
+    def read(self) -> int:
+        pass
+
+
+class OutputDevice(ABC):
+    def write(self, value: int) -> None:
+        pass
+
+
+class ListInputDevice(InputDevice):
+    def __init__(self, input_list: List[int]):
+        self.list = input_list
+
+    def read(self) -> int:
+        return self.list.pop(0)
+
+
+class ListOutputDevice(OutputDevice):
+    def __init__(self, output_list: List[int]):
+        self.list = output_list
+
+    def write(self, value: int) -> None:
+        self.list.append(value)
+
+
+class QueueInputDevice(InputDevice):
+    def __init__(self, input_queue: queue.Queue):
+        self.queue = input_queue
+
+    def read(self) -> int:
+        return self.queue.get(timeout=1)
+
+
+class QueueOutputDevice(OutputDevice):
+    def __init__(self, output_queue: queue.Queue):
+        self.queue = output_queue
+
+    def write(self, value: int) -> None:
+        self.queue.put(value, timeout=1)
+
+
 def add(self: Instruction) -> int:
     value = c_int(self.parameter1.get() + self.parameter2.get()).value
     self.parameter3.set(value)
@@ -78,26 +121,13 @@ def halt(self: Instruction) -> int:
 
 
 def store(self: Instruction) -> int:
-    value = self.input.pop(0)
-    self.parameter1.set(value)
-    return self.position + 2
-
-
-def store_q(self: Instruction) -> int:
-    value = self.input.get(timeout=5)
-    if type(value) == Poison:
-        raise Halt
+    value = self.input.read()
     self.parameter1.set(value)
     return self.position + 2
 
 
 def retrieve(self: Instruction) -> int:
-    self.output.append(self.parameter1.get())
-    return self.position + 2
-
-
-def retrieve_q(self: Instruction) -> int:
-    self.output.put(self.parameter1.get(), timeout=5)
+    self.output.write(self.parameter1.get())
     return self.position + 2
 
 
@@ -143,18 +173,6 @@ default_operations: Dict[int, Callable[[Instruction], int]] = {
     99: halt,
 }
 
-operations_q: Dict[int, Callable[[Instruction], int]] = {
-    1: add,
-    2: multiply,
-    3: store_q,
-    4: retrieve_q,
-    5: jump_if_true,
-    6: jump_if_false,
-    7: less_than,
-    8: equals,
-    99: halt,
-}
-
 
 def instruction_factory(
     data: List[int],
@@ -185,7 +203,7 @@ def run_intcode_computer(program: List[int], input_):
     position = 0
     program = list(program)
     while True:
-        instruction = instruction_factory(program, position, input_, output)
+        instruction = instruction_factory(program, position, input_, ListOutputDevice(output))
         try:
             position = instruction()
         except Halt:
@@ -198,7 +216,7 @@ def run_intcode_computer2(program: List[int], input_, output, idx: str):
     program = list(program)
     while True:
         instruction = instruction_factory(
-            program, position, input_, output, idx, operations=operations_q
+            program, position, input_, output, idx,
         )
         try:
             position = instruction()
@@ -221,7 +239,7 @@ class Day7(Puzzle):
             input_ = [0, 0]
             for phase in i:
                 input_[0] = phase
-                output = run_intcode_computer(data, input_)
+                output = run_intcode_computer(data, ListInputDevice(input_))
                 input_ = [None, output.pop()]
             thruster_inputs.append(input_[1])
 
@@ -245,8 +263,8 @@ class Day7(Puzzle):
                     target=run_intcode_computer2,
                     args=(
                         data,
-                        channels[channel_idx],
-                        channels[(channel_idx + 1) % len(channels)],
+                        QueueInputDevice(channels[channel_idx]),
+                        QueueOutputDevice(channels[(channel_idx + 1) % len(channels)]),
                         amplifier_indexes[channel_idx],
                     ),
                 )
