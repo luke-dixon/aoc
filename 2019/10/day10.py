@@ -37,14 +37,11 @@ class Day10(Puzzle):
         return orig_data.splitlines()
 
     def part1(self):
-        data = self.get_data()
-        print(data)
         asteroid_locations = set()
-        for y, line in enumerate(data):
+        for y, line in enumerate(self.get_data()):
             for x, c in enumerate(line):
                 if c == '#':
                     asteroid_locations.add((x, y))
-        print(len(asteroid_locations))
 
         asteroids_detected = {}
         for center in asteroid_locations:
@@ -59,14 +56,11 @@ class Day10(Puzzle):
         return max(asteroids_detected.values())
 
     def part2(self):
-        data = self.get_data()
-        print(data)
         asteroid_locations = set()
-        for y, line in enumerate(data):
+        for y, line in enumerate(self.get_data()):
             for x, c in enumerate(line):
                 if c == '#':
                     asteroid_locations.add((x, y))
-        print(len(asteroid_locations))
 
         asteroids_detected = {}
         for center in asteroid_locations:
@@ -77,11 +71,7 @@ class Day10(Puzzle):
                     found_angles.add(angle)
             asteroids_detected[center] = len(found_angles)
 
-        center = max(asteroids_detected.items(), key=operator.itemgetter(1))
-        print(center)
-
-        center = (20, 21)
-        #center = (11, 13)
+        center = max(asteroids_detected.items(), key=operator.itemgetter(1))[0]
 
         asteroids_destroyed = []
         while True:
@@ -94,8 +84,6 @@ class Day10(Puzzle):
                     current_location = asteroids_detected2[angle]
                     if taxicab_distance(current_location, (0, 0)) > taxicab_distance((asteroid[0] - center[0], asteroid[1] - center[1]), (0, 0)):
                         asteroids_detected2[angle] = (asteroid[0] - center[0], asteroid[1] - center[1])
-            print(asteroids_detected2)
-            print(len(asteroids_detected2))
 
             asteroids_detected3 = {}
             for angle, location in asteroids_detected2.items():
@@ -103,22 +91,14 @@ class Day10(Puzzle):
                     angle += 2 * math.pi
                 asteroids_detected3[angle] = location
 
-            print(sorted(asteroids_detected3))
-
             for angle in sorted(asteroids_detected3.keys()):
-                #assert 0 <= angle and angle < 2*math.pi
                 location = asteroids_detected3[angle]
                 asteroid_locations.remove((location[0] + center[0], location[1] + center[1]))
-                print(f'destroyed: ({location[0], location[1]}), ({location[0] + center[0], location[1] + center[1]}) angle: {angle}')
                 asteroids_destroyed.append((location[0] + center[0], location[1] + center[1]))
 
             if not asteroid_locations or not asteroids_detected2:
                 break
 
-        print(asteroids_destroyed)
-        print(len(asteroids_destroyed))
-        print(asteroids_destroyed[199])
-        print(asteroids_destroyed[199][0] * 100 + asteroids_destroyed[199][1])
         return asteroids_destroyed[199][0] * 100 + asteroids_destroyed[199][1]
 
 
