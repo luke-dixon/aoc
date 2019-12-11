@@ -212,31 +212,29 @@ def run_intcode_computer(program: Union[List[int], Dict[int, int]], input_, outp
     return output
 
 
-next_value = []
-
-
 class GridInputDevice(InputDevice):
-    def __init__(self, grid):
+    def __init__(self, grid, next_value):
         self.grid = grid
+        self.next_value = next_value
 
     def read(self):
-        if not next_value:
+        if not self.next_value:
             value = next(self.grid)
         else:
-            value = next_value.pop(0)
+            value = self.next_value.pop(0)
         return value
 
 
 class GridOutputDevice(OutputDevice):
-    def __init__(self, grid):
+    def __init__(self, grid, next_value):
         self.grid = grid
         self.value = []
+        self.next_value = next_value
 
     def write(self, value: int) -> None:
         if len(self.value) == 1:
             self.value.append(value)
-            new_value = self.grid.send(self.value)
-            next_value.append(new_value)
+            self.next_value.append(self.grid.send(self.value))
             self.value = []
         else:
             self.value.append(value)
@@ -313,23 +311,22 @@ class Day11(Puzzle):
         return data
 
     def part1(self):
-        global next_value
-
         grid_data = {}
         grid = grid_gen(grid_data, initial_colour=0)
+
         next_value = []
         grid.send(None)
-        run_intcode_computer(self.get_data(), GridInputDevice(grid), GridOutputDevice(grid), label='part1')
+        run_intcode_computer(self.get_data(), GridInputDevice(grid, next_value), GridOutputDevice(grid, next_value), label='part1')
+
         return len(grid.send('get result'))
 
     def part2(self):
-        global next_value
-
         grid_data = {}
         grid = grid_gen(grid_data, initial_colour=1)
 
-        next_value = [grid.send(None)]
-        run_intcode_computer(self.get_data(), GridInputDevice(grid), GridOutputDevice(grid), label='part1')
+        next_value = []
+        grid.send(None)
+        run_intcode_computer(self.get_data(), GridInputDevice(grid, next_value), GridOutputDevice(grid, next_value), label='part1')
 
         return '\n' + paint_grid(grid_data, range(-50, 50), range(-50, 50))
 
