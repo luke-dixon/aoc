@@ -1,3 +1,5 @@
+import functools
+import itertools
 import math
 import re
 from collections import deque
@@ -6,26 +8,54 @@ from aocd.models import Puzzle
 
 
 class Point:
+    __slots__ = ('data')
+
     def __init__(self, x, y, z):
-        self.x, self.y, self.z = x, y, z
+        self.data = [x, y, z]
 
     def __repr__(self):
-        return f'Point({self.x}, {self.y}, {self.z})'
+        return f'Point(x={self.x}, y={self.y}, z={self.z})'
+
+    @property
+    def x(self):
+        return self.data[0]
+
+    @property
+    def y(self):
+        return self.data[1]
+
+    @property
+    def z(self):
+        return self.data[2]
+
+    @x.setter
+    def x(self, value):
+        self.data[0] = value
+
+    @y.setter
+    def y(self, value):
+        self.data[1] = value
+
+    @z.setter
+    def z(self, value):
+        self.data[2] = value
 
     @classmethod
     def from_point(cls, other):
         return cls(other.x, other.y, other.z)
 
     def __getitem__(self, i):
-        if i == 0:
-            return self.x
-        if i == 1:
-            return self.y
-        if i == 2:
-            return self.z
+        return self.data[i]
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
 
     def __add__(self, other):
         return Point(self.x + other.x, self.y + other.y, self.z + other.z)
+
+    def __iadd__(self, other):
+        self.data[0], self.data[1], self.data[2] = self.x + other.x, self.y + other.y, self.z + other.z
+        return self
 
     def __eq__(self, other):
         return all([
@@ -39,12 +69,8 @@ def lcm(a, b):
     return abs(a * b) // math.gcd(a, b)
 
 
-def lcm3(a, b, c):
-    return lcm(a, lcm(b, c))
-
-
-def lcm4(a, b, c, d):
-    return lcm(a, lcm(b, lcm(c, d)))
+def lcmv(l):
+    return functools.reduce(lcm, l)
 
 
 class Moon:
@@ -53,6 +79,14 @@ class Moon:
         self.velocity = velocity
         self.path = []
         self._is_repeating = False
+
+    def add_velocity(self, other_moon):
+        for i in range(3):
+            self.velocity[i] += self.point[i] < other_moon.point[i]
+            self.velocity[i] -= self.point[i] > other_moon.point[i]
+
+    def apply_velocity(self):
+        self.point += self.velocity
 
     def is_repeating(self):
         if self._is_repeating:
@@ -83,66 +117,37 @@ class Day11(Puzzle):
         super().__init__(year=2019, day=12)
 
     def get_data(self):
-        orig_data = '''<x=-1, y=0, z=2>\n<x=2, y=-10, z=-7>\n<x=4, y=-8, z=8>\n<x=3, y=5, z=-1>'''
-        orig_data = '''<x=-8, y=-10, z=0>\n<x=5, y=5, z=10>\n<x=2, y=-7, z=3>\n<x=9, y=-8, z=-3>'''
-
-        orig_data = self.input_data
-        data = orig_data.splitlines()
         cleaned_data = []
-        for d in data:
+        for d in self.input_data.splitlines():
             m = re.search(r'<x=(-?\d+), y=(-?\d+), z=(-?\d+)>', d)
             cleaned_data.append(Point(int(m.group(1)), int(m.group(2)), int(m.group(3))))
         return cleaned_data
 
     def part1(self):
-        data = self.get_data()
-        moons = []
-        for d in data:
-            moons.append(Moon(d, Point(0, 0, 0)))
+        moons = set()
+        for point in self.get_data():
+            moons.add(Moon(point=point, velocity=Point(0, 0, 0)))
 
-        steps = 0
+        for _ in range(1000):
 
-        while True:
-
-            for moon in moons:
-                for other_moon in moons:
-                    if moon.point.x < other_moon.point.x:
-                        moon.velocity.x += 1
-                    if moon.point.x > other_moon.point.x:
-                        moon.velocity.x -= 1
-                    if moon.point.y < other_moon.point.y:
-                        moon.velocity.y += 1
-                    if moon.point.y > other_moon.point.y:
-                        moon.velocity.y -= 1
-                    if moon.point.z < other_moon.point.z:
-                        moon.velocity.z += 1
-                    if moon.point.z > other_moon.point.z:
-                        moon.velocity.z -= 1
+            for moon, other_moon in itertools.permutations(moons, 2):
+                moon.add_velocity(other_moon)
 
             for moon in moons:
-                moon.point.x += moon.velocity.x
-                moon.point.y += moon.velocity.y
-                moon.point.z += moon.velocity.z
-
-            steps += 1
-            total_energy = sum(moon.total_energy() for moon in moons)
-            if steps >= 1000:
-                break
+                moon.apply_velocity()
 
         return sum(moon.total_energy() for moon in moons)
 
     def part2(self):
-
-
         lcms = []
         PATTERN_SIZE = 8
-        for j in reversed(range(3)):
+        for axis in reversed(range(3)):
             moons = []
-            for d in self.get_data():
-                moons.append(Moon(d, Point(0, 0, 0), Point(0, 0, 0), Point(0, 0, 0)))
+            for point in self.get_data():
+                moons.append(Moon(point=point, velocity=Point(0, 0, 0)))
 
             for moon in moons:
-                moon.point = {0: moon.point.x, 1: moon.point.y, 2: moon.point.z}[j]
+                moon.point = {0: moon.point.x, 1: moon.point.y, 2: moon.point.z}[axis]
                 moon.velocity = 0
 
             steps = 0
@@ -169,23 +174,18 @@ class Day11(Puzzle):
                 ]):
                     break
 
-                for i, moon in enumerate(moons):
-                    for other_moon in moons:
-                        if moon == other_moon:
-                            continue
-                        if moon.point < other_moon.point:
-                            moon.velocity += 1
-                        if moon.point > other_moon.point:
-                            moon.velocity -= 1
+                for moon, other_moon in itertools.permutations(moons, 2):
+                    moon.velocity += moon.point < other_moon.point
+                    moon.velocity -= moon.point > other_moon.point
 
                 for i, moon in enumerate(moons):
                     moon.point += moon.velocity
 
                 steps += 1
 
-            lcms.append(lcm4(*stabilised))
+            lcms.append(lcmv(stabilised))
 
-        return lcm3(*lcms)
+        return lcmv(lcms)
 
 
 def main():
