@@ -2,13 +2,15 @@ import functools
 import itertools
 import math
 import re
+import sys
+import time
 from collections import deque
 
 from aocd.models import Puzzle
 
 
 class Point:
-    __slots__ = ('data')
+    __slots__ = 'data'
 
     def __init__(self, x, y, z):
         self.data = [x, y, z]
@@ -54,15 +56,15 @@ class Point:
         return Point(self.x + other.x, self.y + other.y, self.z + other.z)
 
     def __iadd__(self, other):
-        self.data[0], self.data[1], self.data[2] = self.x + other.x, self.y + other.y, self.z + other.z
+        self.data[0], self.data[1], self.data[2] = (
+            self.x + other.x,
+            self.y + other.y,
+            self.z + other.z,
+        )
         return self
 
     def __eq__(self, other):
-        return all([
-            self.x == other.x,
-            self.y == other.y,
-            self.z == other.z,
-        ])
+        return all([self.x == other.x, self.y == other.y, self.z == other.z,])
 
 
 def lcm(a, b):
@@ -74,42 +76,109 @@ def lcmv(l):
 
 
 class Moon:
-    def __init__(self, point, velocity, last_point=None, last_velocity=None):
-        self.point = point
+    def __init__(self, position, velocity):
+        self.position = position
         self.velocity = velocity
-        self.path = []
-        self._is_repeating = False
 
     def add_velocity(self, other_moon):
         for i in range(3):
-            self.velocity[i] += self.point[i] < other_moon.point[i]
-            self.velocity[i] -= self.point[i] > other_moon.point[i]
+            self.velocity[i] += self.position[i] < other_moon.position[i]
+            self.velocity[i] -= self.position[i] > other_moon.position[i]
 
     def apply_velocity(self):
-        self.point += self.velocity
-
-    def is_repeating(self):
-        if self._is_repeating:
-            return True
-        path = self.path
-        if len(self.path) % 2 != 0:
-            return False
-        if len(path) < 4:
-            return False
-        self._is_repeating = path[:len(path) // 2] == path[len(path) // 2:]
-        return self._is_repeating
+        self.position += self.velocity
 
     def potential_energy(self):
-        return sum([abs(e) for e in [self.point.x, self.point.y, self.point.z]])
+        return sum(
+            [abs(e) for e in [self.position.x, self.position.y, self.position.z]]
+        )
 
     def kinetic_energy(self):
-        return sum([abs(e) for e in [self.velocity.x, self.velocity.y, self.velocity.z]])
+        return sum(
+            [abs(e) for e in [self.velocity.x, self.velocity.y, self.velocity.z]]
+        )
 
     def total_energy(self):
         return self.potential_energy() * self.kinetic_energy()
 
     def __repr__(self):
-        return f'Moon(point={repr(self.point)}, velocity={repr(self.velocity)}, path={len(self.path) // 2})'
+        return f'Moon(position={repr(self.position)}, velocity={repr(self.velocity)}, path={len(self.path) // 2})'
+
+
+def print_moons(moons, dimensions):
+    min_x = min([moon.position[dimensions[0]] for moon in moons])
+    min_y = min([moon.position[dimensions[1]] for moon in moons])
+    max_x = max([moon.position[dimensions[0]] for moon in moons])
+    max_y = max([moon.position[dimensions[1]] for moon in moons])
+
+    for y in range(min(min_y, -30), max(max_y + 1, 30)):
+        for x in range(min(min_x, -30), max(max_x + 1, 30)):
+            if (x, y) == (
+                moons[0].position[dimensions[0]],
+                moons[0].position[dimensions[1]],
+            ):
+                print('O', end='')
+            elif (x, y) == (
+                moons[1].position[dimensions[0]],
+                moons[1].position[dimensions[1]],
+            ):
+                print('@', end='')
+            elif (x, y) == (
+                moons[2].position[dimensions[0]],
+                moons[2].position[dimensions[1]],
+            ):
+                print('#', end='')
+            elif (x, y) == (
+                moons[3].position[dimensions[0]],
+                moons[3].position[dimensions[1]],
+            ):
+                print('+', end='')
+            else:
+                print(' ', end='')
+        print()
+    print(f'x: {(min_x, max_x)}, y: {(min_y, max_y)}')
+    print()
+    time.sleep(2)
+
+
+class MoonDimension:
+    PATTERN_SIZE = 9
+
+    def __init__(self, position, velocity):
+        self.position = position
+        self.velocity = velocity
+        self.pattern = [self.position]
+        self.last = deque([self.position])
+        self.stabilised = False
+        self.steps = 1 - self.PATTERN_SIZE
+
+    def add_velocity(self, other_moon_dimension):
+        self.velocity += self.position < other_moon_dimension.position
+        self.velocity -= self.position > other_moon_dimension.position
+
+    def apply_velocity(self):
+        self.position += self.velocity
+
+        if not self.stabilised:
+            self.steps += 1
+
+            self.last.append(self.position)
+
+            if len(self.last) > self.PATTERN_SIZE:
+                self.last.popleft()
+
+            if len(self.pattern) < self.PATTERN_SIZE:
+                self.pattern.append(self.position)
+
+            if (
+                len(self.pattern) >= self.PATTERN_SIZE
+                and len(self.last) >= self.PATTERN_SIZE
+                and self.steps > self.PATTERN_SIZE
+            ):
+                self.stabilised = list(self.last) == self.pattern
+
+    def __repr__(self):
+        return f'MoonDimension(position={repr(self.position)}, velocity={repr(self.velocity)})'
 
 
 class Day11(Puzzle):
@@ -120,14 +189,34 @@ class Day11(Puzzle):
         cleaned_data = []
         for d in self.input_data.splitlines():
             m = re.search(r'<x=(-?\d+), y=(-?\d+), z=(-?\d+)>', d)
-            cleaned_data.append(Point(int(m.group(1)), int(m.group(2)), int(m.group(3))))
+            cleaned_data.append(
+                Point(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+            )
         return cleaned_data
 
-    def part1(self):
-        moons = set()
-        for point in self.get_data():
-            moons.add(Moon(point=point, velocity=Point(0, 0, 0)))
+    def get_moons(self):
+        moons = []
+        for moon_position in self.get_data():
+            moons.append(Moon(position=moon_position, velocity=Point(0, 0, 0)))
+        return moons
 
+    def get_moons2(self, axis):
+        moons = []
+        for moon_position in self.get_data():
+            moons.append(
+                MoonDimension(
+                    position={
+                        0: moon_position.x,
+                        1: moon_position.y,
+                        2: moon_position.z,
+                    }[axis],
+                    velocity=0,
+                )
+            )
+        return moons
+
+    def part1(self):
+        moons = self.get_moons()
         for _ in range(1000):
 
             for moon, other_moon in itertools.permutations(moons, 2):
@@ -136,54 +225,25 @@ class Day11(Puzzle):
             for moon in moons:
                 moon.apply_velocity()
 
+            if '-p' in sys.argv:
+                print_moons(moons, [0, 1])
+
         return sum(moon.total_energy() for moon in moons)
 
     def part2(self):
         lcms = []
-        PATTERN_SIZE = 8
         for axis in reversed(range(3)):
-            moons = []
-            for point in self.get_data():
-                moons.append(Moon(point=point, velocity=Point(0, 0, 0)))
+            moons = self.get_moons2(axis)
 
-            for moon in moons:
-                moon.point = {0: moon.point.x, 1: moon.point.y, 2: moon.point.z}[axis]
-                moon.velocity = 0
-
-            steps = 0
-            patterns = [[], [], [], []]
-            last = [deque(), deque(), deque(), deque()]
-            stabilised = [False, False, False, False]
-            while True:
-                is_repeating = [moon.is_repeating() for moon in moons]
-                for i, moon in enumerate(moons):
-                    last[i].append(moon.point)
-                    if len(last[i]) > PATTERN_SIZE:
-                        last[i].popleft()
-                    if steps < PATTERN_SIZE:
-                        patterns[i].append(moon.point)
-                    if not stabilised[i] and steps > PATTERN_SIZE and list(last[i]) == patterns[i]:
-                        stabilised[i] = steps - PATTERN_SIZE + 1
-
-                if all(stabilised):
-                    break
-
-                if all([
-                    *is_repeating,
-                    steps > 2,
-                ]):
-                    break
+            while not all([moon.stabilised for moon in moons]):
 
                 for moon, other_moon in itertools.permutations(moons, 2):
-                    moon.velocity += moon.point < other_moon.point
-                    moon.velocity -= moon.point > other_moon.point
+                    moon.add_velocity(other_moon)
 
-                for i, moon in enumerate(moons):
-                    moon.point += moon.velocity
+                for moon in moons:
+                    moon.apply_velocity()
 
-                steps += 1
-
-            lcms.append(lcmv(stabilised))
+            lcms.append(lcmv([moon.steps for moon in moons]))
 
         return lcmv(lcms)
 
