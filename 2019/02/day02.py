@@ -1,35 +1,7 @@
 import itertools
-from typing import Callable, Dict, List
+from typing import List
 
-from .. import puzzle
-
-
-def print_data(data: List[int]) -> None:
-    for i in range(0, (len(data) // 4 + 1)):
-        print(data[i * 4 : i * 4 + 4])
-
-
-def add(position: int, data: List[int]) -> None:
-    data[data[position + 3]] = data[data[position + 1]] + data[data[position + 2]]
-
-
-def multiply(position: int, data: List[int]) -> None:
-    data[data[position + 3]] = data[data[position + 1]] * data[data[position + 2]]
-
-
-class Halt(Exception):
-    pass
-
-
-def halt(_position: int, _data: List[int]) -> None:
-    raise Halt()
-
-
-operations: Dict[int, Callable[[int, List[int]], None]] = {
-    1: add,
-    2: multiply,
-    99: halt,
-}
+from .. import intcode, puzzle
 
 
 class Day02(puzzle.Puzzle):
@@ -44,14 +16,13 @@ class Day02(puzzle.Puzzle):
         data[1] = noun
         data[2] = verb
 
-        position = 0
-        while True:
-            opcode = data[position]
-            try:
-                operations[opcode](position, data)
-            except Halt:
-                return data[0]
-            position += 4
+        intcode.run_intcode_computer(
+            data,
+            intcode.ListInputDevice([]),
+            intcode.ListOutputDevice([]),
+            label='part1',
+        )
+        return data[0]
 
     def part2(self) -> int:
         for noun, verb in itertools.product(range(0, 100), range(0, 100)):
