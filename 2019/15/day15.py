@@ -1,3 +1,5 @@
+import random
+import time
 from collections import defaultdict, deque
 
 import networkx as nx
@@ -34,7 +36,7 @@ class FullyExplored(Exception):
         super().__init__()
 
 
-def grid_gen(grid):
+def grid_gen(grid, draw=False):
     min_x, min_y, max_x, max_y = 0, 0, 0, 0
     x, y = 0, 0
     o_x, o_y = 0, 1
@@ -45,6 +47,7 @@ def grid_gen(grid):
         (-1, 0): 3,
         (1, 0): 4,
     }
+    directions = [(1, 0), (-1, 0), (0, -1), (0, 1)]
     grid[(x, y)] = 'D'
 
     g = nx.Graph()
@@ -54,8 +57,8 @@ def grid_gen(grid):
 
     exploring = to_explore.pop()
     to_explore_set.remove(exploring)
-    explored_current = {}
-    explored = {}
+    explored_current = set()
+    explored = set()
 
     oxygen_location = None
 
@@ -64,6 +67,10 @@ def grid_gen(grid):
         min_x, max_x = min(min_x, x), max(max_x, x)
         min_y, max_y = min(min_y, y), max(max_y, y)
 
+        if draw:
+            print(paint_grid(grid, range(min(-22, min_x - 2), max(20, max_x + 3)), range(min(-18, min_y - 2), max(22, max_y + 3))))
+            time.sleep(0.015)
+
         status = yield direction_to_code[(o_x, o_y)]
 
         origin = (0, 0)
@@ -71,6 +78,7 @@ def grid_gen(grid):
         if status == 0:
             # hit wall
             grid[(x + o_x, y + o_y)] = '#'
+            explored.add((x + o_x, y + o_y))
         elif status == 1:
             # empty space
             grid[(x, y)] = 'O' if (x, y) == oxygen_location else ' '
@@ -99,17 +107,13 @@ def grid_gen(grid):
 
         if (x, y) == exploring and len(explored_current) < 4:
             # Pick a square around the one we are currently exploring
-            if (x + 1, y + 0) not in explored_current:
-                o_x, o_y = 1, 0
-            elif (x - 1, y + 0) not in explored_current:
-                o_x, o_y = -1, 0
-            elif (x + 0, y + 1) not in explored_current:
-                o_x, o_y = 0, 1
-            elif (x + 0, y - 1) not in explored_current:
-                o_x, o_y = 0, -1
-            explored_current[(x + o_x, y + o_y)] = True
+            for dx, dy in random.sample(directions, k=len(directions)):
+                if (x + dx, y + dy) not in explored_current:
+                    o_x, o_y = dx, dy
+                    break
+            explored_current.add((x + o_x, y + o_y))
             continue
-        elif (x, y) != exploring:
+        elif (x, y) != exploring and len(explored_current) < 4:
             # Get back to the square we are exploring from
             path = nx.shortest_path(g, (x, y), exploring)
             if x > path[1][0]:
@@ -127,7 +131,7 @@ def grid_gen(grid):
                 o_y = 0
         elif len(explored_current) == 4:
             # We've fully explored the directly surrounding tiles
-            explored[(x, y)] = True
+            explored.add((x, y))
 
             if len(to_explore) == 0:
                 # We're done
@@ -147,7 +151,12 @@ def grid_gen(grid):
             # Pick a new square to explore
             exploring = to_explore.pop()  # DFS as BFS would cause too much backtracking
             to_explore_set.remove(exploring)
-            explored_current = {}
+            explored_current = set()
+
+            # Add already explored squares, so we don't keep checking them
+            for dx, dy in directions:
+                if (exploring[0] + dx, exploring[1] + dy) in explored:
+                    explored_current.add((exploring[0] + dx, exploring[1] + dy))
 
 
 def paint_grid(grid_data, x_range, y_range):
@@ -169,6 +178,9 @@ class Day15(puzzle.Puzzle):
     year = '2019'
     day = '15'
 
+    def add_additional_args(self, parser):
+        parser.add_argument('-d', '--draw', action='store_true')
+
     def get_data(self):
         orig_data = self.input_data
         data = defaultdict(lambda: 0)
@@ -178,7 +190,7 @@ class Day15(puzzle.Puzzle):
 
     def run(self):
         grid_data = {}
-        grid = grid_gen(grid_data)
+        grid = grid_gen(grid_data, draw=self.args.draw)
 
         next_value = []
         grid.send(None)
