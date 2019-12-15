@@ -4,7 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Union
 
-from aocd.models import Puzzle
+from .. import puzzle
 
 
 class Halt(Exception):
@@ -214,9 +214,9 @@ def run_intcode_computer(
     return output
 
 
-class Day9(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=9)
+class Day09(puzzle.Puzzle):
+    year = '2019'
+    day = '9'
 
     def get_data(self):
         orig_data = self.input_data
@@ -256,9 +256,6 @@ class Day9(Puzzle):
         )
         return output[0]
 
-
-def main():
-    puzzle = Day9()
-
-    print(f'Part 1 Answer: {puzzle.part1()}')
-    print(f'Part 2 Answer: {puzzle.part2()}')
+    def run(self):
+        print(f'Part 1 Answer: {self.part1()}')
+        print(f'Part 2 Answer: {self.part2()}')

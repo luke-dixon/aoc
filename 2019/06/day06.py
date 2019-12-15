@@ -1,18 +1,21 @@
 from collections import defaultdict
 
 import networkx
-from aocd.models import Puzzle
+
+from .. import puzzle
 
 
-class Day6(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=6)
-        self.data = self.input_data.splitlines()
+class Day06(puzzle.Puzzle):
+    year = '2019'
+    day = '6'
 
-        self.universal_center = 'COM'
+    universal_center = 'COM'
+
+    def get_data(self):
+        return self.input_data.splitlines()
 
     def part1(self):
-        data = list(self.data)
+        data = list(self.get_data())
         orbits = {}
         centers = defaultdict(list)
         for orbit in data:
@@ -36,7 +39,7 @@ class Day6(Puzzle):
         return total
 
     def part2(self):
-        data = list(self.data)
+        data = list(self.get_data())
 
         orbits = {}
         for orbit in data:
@@ -51,9 +54,6 @@ class Day6(Puzzle):
 
         return networkx.shortest_path_length(orbits_graph, orbits['YOU'], orbits['SAN'])
 
-
-def main():
-    puzzle = Day6()
-
-    print(f'Part 1 Answer: {puzzle.part1()}')
-    print(f'Part 2 Answer: {puzzle.part2()}')
+    def run(self):
+        print(f'Part 1 Answer: {self.part1()}')
+        print(f'Part 2 Answer: {self.part2()}')

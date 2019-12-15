@@ -1,9 +1,9 @@
-from aocd.models import Puzzle
+from .. import puzzle
 
 
-class Day04(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=4)
+class Day04(puzzle.Puzzle):
+    year = '2019'
+    day = '4'
 
     def get_data(self) -> str:
         return self.input_data
@@ -60,9 +60,6 @@ class Day04(Puzzle):
 
         return len(results)
 
-
-def main():
-    puzzle = Day04()
-
-    print(f'Answer part 1: {puzzle.part1()}')
-    print(f'Answer part 2: {puzzle.part2()}')
+    def run(self):
+        print(f'Answer part 1: {self.part1()}')
+        print(f'Answer part 2: {self.part2()}')

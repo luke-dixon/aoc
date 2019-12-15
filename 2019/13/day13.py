@@ -1,12 +1,11 @@
 import math
 import queue
-import sys
 from abc import ABC
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Union
 
-from aocd.models import Puzzle
+from .. import puzzle
 
 
 class Halt(Exception):
@@ -304,12 +303,17 @@ class UserJoystickInputDevice(InputDevice):
             'd': 1,
         }
 
-        return controls.get(input('Enter a direction: '), 0)
+        print(draw_output(self.output, draw=True))
+        return controls.get(input('Enter a direction (a: left, d: right): '), 0)
 
 
-class Day13(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=13)
+class Day13(puzzle.Puzzle):
+    year = '2019'
+    day = '13'
+
+    def add_additional_args(self, parser):
+        parser.add_argument('-u', '--user', action='store_true')
+        parser.add_argument('-d', '--draw', action='store_true')
 
     def get_data(self):
         orig_data = self.input_data
@@ -339,11 +343,11 @@ class Day13(Puzzle):
         data = self.get_data()
         data[0] = 2
 
-        if '-u' in sys.argv:
+        if self.args.user:
             input_device = UserJoystickInputDevice(output)
         else:
             input_device = AIJoystickInputDevice(output)
-            if '-d' in sys.argv:
+            if self.args.draw:
                 input_device.draw = True
 
         run_intcode_computer(
@@ -352,9 +356,6 @@ class Day13(Puzzle):
 
         return '\n' + draw_output(output)
 
-
-def main():
-    puzzle = Day13()
-
-    print(f'Part 1 Answer: {puzzle.part1()}')
-    print(f'Part 2 Answer: {puzzle.part2()}')
+    def run(self):
+        print(f'Part 1 Answer: {self.part1()}')
+        print(f'Part 2 Answer: {self.part2()}')

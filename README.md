@@ -2,6 +2,8 @@
 
 All of these are ugly and bad. Don't look at them please.
 
+These are my solutions for [Advent of Code](https://adventofcode.com/)
+
 For the first commit for each solution it is as close to what got me the solution as I have.
 Some of them I just played around inside the Python interpreter, so those ones are especially ugly.
 
@@ -16,10 +18,13 @@ pip install -r 2019/requirements.txt
 These can be run from this directory like:
 
 ```
-python -m 2019.15
+python -m 2019.05 -f /path/to/input.txt
 ```
 
-You'll need to export `AOC_SESSION` to retrieve the input data.
+Alternatively you can export `AOC_SESSION` to retrieve the input data.
+```
+python -m 2019.15
+```
 
 ## 2017-2018
 

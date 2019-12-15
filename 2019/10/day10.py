@@ -1,14 +1,12 @@
 import math
 import operator
 
-from aocd.models import Puzzle
-
-from .. import geometry
+from .. import geometry, puzzle
 
 
-class Day10(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=10)
+class Day10(puzzle.Puzzle):
+    year = '2019'
+    day = '10'
 
     def get_data(self):
         orig_data = self.input_data
@@ -94,9 +92,6 @@ class Day10(Puzzle):
 
         return asteroids_destroyed[199][0] * 100 + asteroids_destroyed[199][1]
 
-
-def main():
-    puzzle = Day10()
-
-    print(f'Part 1 Answer: {puzzle.part1()}')
-    print(f'Part 2 Answer: {puzzle.part2()}')
+    def run(self):
+        print(f'Part 1 Answer: {self.part1()}')
+        print(f'Part 2 Answer: {self.part2()}')

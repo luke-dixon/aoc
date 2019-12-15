@@ -1,7 +1,7 @@
 import itertools
 from typing import Callable, Dict, List
 
-from aocd.models import Puzzle
+from .. import puzzle
 
 
 def print_data(data: List[int]) -> None:
@@ -32,9 +32,9 @@ operations: Dict[int, Callable[[int, List[int]], None]] = {
 }
 
 
-class Day2(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=2)
+class Day02(puzzle.Puzzle):
+    year = '2019'
+    day = '2'
 
     def get_data(self) -> List[int]:
         return [int(x) for x in self.input_data.strip().split(',')]
@@ -58,9 +58,6 @@ class Day2(Puzzle):
             if self.part1(noun, verb) == 19690720:
                 return 100 * noun + verb
 
-
-def main():
-    puzzle = Day2()
-
-    print(f'Answer part 1: {puzzle.part1(12, 2)}')
-    print(f'Answer part 2: {puzzle.part2()}')
+    def run(self):
+        print(f'Answer part 1: {self.part1(12, 2)}')
+        print(f'Answer part 2: {self.part2()}')

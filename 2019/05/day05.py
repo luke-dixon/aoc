@@ -1,11 +1,9 @@
-from aocd.models import Puzzle
-
-from .. import intcode
+from .. import intcode, puzzle
 
 
-class Day5(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=5)
+class Day05(puzzle.Puzzle):
+    year = '2019'
+    day = '5'
 
     def get_data(self):
         return tuple([int(x) for x in self.input_data.split(',')])
@@ -30,9 +28,6 @@ class Day5(Puzzle):
         )
         return output[-1]
 
-
-def main():
-    puzzle = Day5()
-
-    print(f'Part 1 Answer: {puzzle.part1()}')
-    print(f'Part 2 Answer: {puzzle.part2()}')
+    def run(self):
+        print(f'Part 1 Answer: {self.part1()}')
+        print(f'Part 2 Answer: {self.part2()}')

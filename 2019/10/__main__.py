@@ -1,4 +1,6 @@
-from .day10 import main
+import sys
+
+from .day10 import Day10
 
 if __name__ == '__main__':
-    main()
+    Day10(args=sys.argv[1:]).run()

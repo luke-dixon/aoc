@@ -1,9 +1,8 @@
 from collections import defaultdict, deque
 
 import networkx as nx
-from aocd.models import Puzzle
 
-from .. import intcode
+from .. import intcode, puzzle
 
 
 class GridInputDevice(intcode.InputDevice):
@@ -166,9 +165,9 @@ def paint_grid(grid_data, x_range, y_range):
     return output
 
 
-class Day15(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=15)
+class Day15(puzzle.Puzzle):
+    year = '2019'
+    day = '15'
 
     def get_data(self):
         orig_data = self.input_data
@@ -192,22 +191,23 @@ class Day15(Puzzle):
 
         return len(grid.send('get result'))
 
-
-def main():
-    try:
-        Day15().run()
-    except FullyExplored as e:
-        grid = e.payload['grid']
-        min_x, max_x = e.payload['min_x'], e.payload['max_x']
-        min_y, max_y = e.payload['min_y'], e.payload['max_y']
-        graph = e.payload['graph']
-        origin = e.payload['origin']
-        oxygen_location = e.payload['oxygen_location']
-        print(
-            paint_grid(grid, range(min_x - 2, max_x + 3), range(min_y - 2, max_y + 3))
-        )
-        print(
-            f'Part 1 Answer: {len(nx.shortest_path(graph, origin, oxygen_location)) - 1}'
-        )
-        r = nx.single_source_dijkstra_path_length(graph, oxygen_location)
-        print(f'Part 2 Answer: {max(r.values())}')
+    def main(self):
+        try:
+            self.run()
+        except FullyExplored as e:
+            grid = e.payload['grid']
+            min_x, max_x = e.payload['min_x'], e.payload['max_x']
+            min_y, max_y = e.payload['min_y'], e.payload['max_y']
+            graph = e.payload['graph']
+            origin = e.payload['origin']
+            oxygen_location = e.payload['oxygen_location']
+            print(
+                paint_grid(
+                    grid, range(min_x - 2, max_x + 3), range(min_y - 2, max_y + 3)
+                )
+            )
+            print(
+                f'Part 1 Answer: {len(nx.shortest_path(graph, origin, oxygen_location)) - 1}'
+            )
+            r = nx.single_source_dijkstra_path_length(graph, oxygen_location)
+            print(f'Part 2 Answer: {max(r.values())}')

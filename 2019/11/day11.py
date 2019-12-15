@@ -1,12 +1,6 @@
-import queue
-from abc import ABC
 from collections import defaultdict
-from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Union
 
-from aocd.models import Puzzle
-
-from .. import intcode
+from .. import intcode, puzzle
 
 
 class GridInputDevice(intcode.InputDevice):
@@ -95,9 +89,9 @@ def paint_grid(grid_data, x_range, y_range):
     return output
 
 
-class Day11(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=11)
+class Day11(puzzle.Puzzle):
+    year = '2019'
+    day = '11'
 
     def get_data(self):
         orig_data = self.input_data
@@ -136,9 +130,6 @@ class Day11(Puzzle):
 
         return '\n' + paint_grid(grid_data, range(-2, 50), range(-10, 3))
 
-
-def main():
-    puzzle = Day11()
-
-    print(f'Part 1 Answer: {puzzle.part1()}')
-    print(f'Part 2 Answer: {puzzle.part2()}')
+    def run(self):
+        print(f'Part 1 Answer: {self.part1()}')
+        print(f'Part 2 Answer: {self.part2()}')

@@ -1,78 +1,10 @@
-import functools
 import itertools
-import math
 import re
 import sys
 import time
 from collections import deque
 
-from aocd.models import Puzzle
-
-
-class Point:
-    __slots__ = 'data'
-
-    def __init__(self, x, y, z):
-        self.data = [x, y, z]
-
-    def __repr__(self):
-        return f'Point(x={self.x}, y={self.y}, z={self.z})'
-
-    @property
-    def x(self):
-        return self.data[0]
-
-    @property
-    def y(self):
-        return self.data[1]
-
-    @property
-    def z(self):
-        return self.data[2]
-
-    @x.setter
-    def x(self, value):
-        self.data[0] = value
-
-    @y.setter
-    def y(self, value):
-        self.data[1] = value
-
-    @z.setter
-    def z(self, value):
-        self.data[2] = value
-
-    @classmethod
-    def from_point(cls, other):
-        return cls(other.x, other.y, other.z)
-
-    def __getitem__(self, i):
-        return self.data[i]
-
-    def __setitem__(self, key, value):
-        self.data[key] = value
-
-    def __add__(self, other):
-        return Point(self.x + other.x, self.y + other.y, self.z + other.z)
-
-    def __iadd__(self, other):
-        self.data[0], self.data[1], self.data[2] = (
-            self.x + other.x,
-            self.y + other.y,
-            self.z + other.z,
-        )
-        return self
-
-    def __eq__(self, other):
-        return all([self.x == other.x, self.y == other.y, self.z == other.z,])
-
-
-def lcm(a, b):
-    return abs(a * b) // math.gcd(a, b)
-
-
-def lcmv(l):
-    return functools.reduce(lcm, l)
+from .. import geometry, math, puzzle
 
 
 class Moon:
@@ -105,11 +37,13 @@ class Moon:
         return f'Moon(position={repr(self.position)}, velocity={repr(self.velocity)}, path={len(self.path) // 2})'
 
 
-def print_moons(moons, dimensions):
+def draw_moons(moons, dimensions):
     min_x = min([moon.position[dimensions[0]] for moon in moons])
     min_y = min([moon.position[dimensions[1]] for moon in moons])
     max_x = max([moon.position[dimensions[0]] for moon in moons])
     max_y = max([moon.position[dimensions[1]] for moon in moons])
+
+    s = ''
 
     for y in range(min(min_y, -30), max(max_y + 1, 30)):
         for x in range(min(min_x, -30), max(max_x + 1, 30)):
@@ -117,28 +51,28 @@ def print_moons(moons, dimensions):
                 moons[0].position[dimensions[0]],
                 moons[0].position[dimensions[1]],
             ):
-                print('O', end='')
+                s += 'O'
             elif (x, y) == (
                 moons[1].position[dimensions[0]],
                 moons[1].position[dimensions[1]],
             ):
-                print('@', end='')
+                s += '@'
             elif (x, y) == (
                 moons[2].position[dimensions[0]],
                 moons[2].position[dimensions[1]],
             ):
-                print('#', end='')
+                s += '#'
             elif (x, y) == (
                 moons[3].position[dimensions[0]],
                 moons[3].position[dimensions[1]],
             ):
-                print('+', end='')
+                s += '+'
             else:
-                print(' ', end='')
-        print()
-    print(f'x: {(min_x, max_x)}, y: {(min_y, max_y)}')
-    print()
-    time.sleep(2)
+                s += ' '
+        s += '\n'
+    s += f'x: {(min_x, max_x)}, y: {(min_y, max_y)}'
+    s += '\n'
+    return s
 
 
 class MoonDimension:
@@ -181,9 +115,12 @@ class MoonDimension:
         return f'MoonDimension(position={repr(self.position)}, velocity={repr(self.velocity)})'
 
 
-class Day11(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=12)
+class Day12(puzzle.Puzzle):
+    year = '2019'
+    day = '12'
+
+    def add_additional_args(self, parser):
+        parser.add_argument('-d', '--draw', action='store_true')
 
     def get_data(self):
         cleaned_data = []
@@ -192,14 +129,16 @@ class Day11(Puzzle):
         for d in data.splitlines():
             m = re.search(r'<x=(-?\d+), y=(-?\d+), z=(-?\d+)>', d)
             cleaned_data.append(
-                Point(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+                geometry.Point3D(int(m.group(1)), int(m.group(2)), int(m.group(3)))
             )
         return cleaned_data
 
     def get_moons(self):
         moons = []
         for moon_position in self.get_data():
-            moons.append(Moon(position=moon_position, velocity=Point(0, 0, 0)))
+            moons.append(
+                Moon(position=moon_position, velocity=geometry.Point3D(0, 0, 0))
+            )
         return moons
 
     def get_moons2(self, axis):
@@ -227,8 +166,9 @@ class Day11(Puzzle):
             for moon in moons:
                 moon.apply_velocity()
 
-            if '-p' in sys.argv:
-                print_moons(moons, [0, 1])
+            if self.args.draw:
+                print(draw_moons(moons, [0, 1]))
+                time.sleep(0.2)
 
         return sum(moon.total_energy() for moon in moons)
 
@@ -245,13 +185,10 @@ class Day11(Puzzle):
                 for moon in moons:
                     moon.apply_velocity()
 
-            lcms.append(lcmv([moon.steps for moon in moons]))
+            lcms.append(math.lcmv([moon.steps for moon in moons]))
 
-        return lcmv(lcms)
+        return math.lcmv(lcms)
 
-
-def main():
-    puzzle = Day11()
-
-    print(f'Part 1 Answer: {puzzle.part1()}')
-    print(f'Part 2 Answer: {puzzle.part2()}')
+    def run(self):
+        print(f'Part 1 Answer: {self.part1()}')
+        print(f'Part 2 Answer: {self.part2()}')

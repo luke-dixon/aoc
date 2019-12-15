@@ -1,12 +1,11 @@
-import sys
 from collections import deque
 
-from aocd.models import Puzzle
+from .. import puzzle
 
 
-class Day14(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=14)
+class Day14(puzzle.Puzzle):
+    year = '2019'
+    day = '14'
 
     def get_data(self):
         orig_data = '''9 ORE => 2 A
@@ -196,9 +195,6 @@ class Day14(Puzzle):
         print(1000000000000 / (sum(totals) / count))
         return int(1000000000000 // (sum(totals) / count))
 
-
-def main():
-    puzzle = Day14()
-
-    print(f'Part 1 Answer: {puzzle.part1()}')
-    print(f'Part 2 Answer: {puzzle.part2()}')
+    def run(self):
+        print(f'Part 1 Answer: {self.part1()}')
+        print(f'Part 2 Answer: {self.part2()}')

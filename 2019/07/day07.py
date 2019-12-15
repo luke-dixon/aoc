@@ -5,7 +5,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional
 
-from aocd.models import Puzzle
+from .. import puzzle
 
 
 class Halt(Exception):
@@ -211,13 +211,15 @@ def run_intcode_computer2(program: List[int], input_, output, label: str):
     return output
 
 
-class Day7(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=7)
-        self.data = [int(x) for x in self.input_data.splitlines()[0].split(',')]
+class Day07(puzzle.Puzzle):
+    year = '2019'
+    day = '7'
+
+    def get_data(self):
+        return [int(x) for x in self.input_data.splitlines()[0].split(',')]
 
     def part1(self):
-        data = self.data
+        data = self.get_data()
 
         thruster_inputs = []
 
@@ -232,7 +234,7 @@ class Day7(Puzzle):
         return max(thruster_inputs)
 
     def part2(self):
-        data = self.data
+        data = self.get_data()
         thruster_inputs = []
         amplifier_indexes = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
 
@@ -271,9 +273,6 @@ class Day7(Puzzle):
 
         return max(thruster_inputs)
 
-
-def main():
-    puzzle = Day7()
-
-    print(f'Part 1 Answer: {puzzle.part1()}')
-    print(f'Part 2 Answer: {puzzle.part2()}')
+    def run(self):
+        print(f'Part 1 Answer: {self.part1()}')
+        print(f'Part 2 Answer: {self.part2()}')

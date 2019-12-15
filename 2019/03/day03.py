@@ -1,9 +1,7 @@
 from collections import namedtuple
 from typing import List
 
-from aocd.models import Puzzle
-
-from .. import geometry
+from .. import geometry, puzzle
 
 Payload = namedtuple('Payload', ['origin', 'distance_by_wire'])
 
@@ -68,9 +66,9 @@ class Grid:
         return grid
 
 
-class Day3(Puzzle):
-    def __init__(self):
-        super().__init__(year=2019, day=3)
+class Day03(puzzle.Puzzle):
+    year = '2019'
+    day = '3'
 
     def get_data(self) -> List[str]:
         return self.input_data.splitlines()
@@ -88,10 +86,8 @@ class Day3(Puzzle):
         return min(distances)
 
 
-def main():
-    puzzle = Day3()
+    def run(self):
+        grid = Grid.from_data(self.get_data())
 
-    grid = Grid.from_data(puzzle.get_data())
-
-    print(f'Answer part 1: {puzzle.part1(grid)}')
-    print(f'Answer part 2: {puzzle.part2(grid)}')
+        print(f'Answer part 1: {self.part1(grid)}')
+        print(f'Answer part 2: {self.part2(grid)}')
