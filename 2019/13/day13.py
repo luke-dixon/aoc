@@ -2,9 +2,9 @@ import math
 import queue
 import sys
 from abc import ABC
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
-from typing import Dict, Callable, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from aocd.models import Puzzle
 
@@ -52,7 +52,7 @@ class Instruction:
 
     def __call__(self):
         global I
-        #print(f'{I}: operation: {self.operation.__name__}, pointer: {self.position}')
+        # print(f'{I}: operation: {self.operation.__name__}, pointer: {self.position}')
         return self.operation(self), self.relative_base
 
 
@@ -201,7 +201,9 @@ def instruction_factory(
     )
 
 
-def run_intcode_computer(program: Union[List[int], Dict[int, int]], input_, output, label: str):
+def run_intcode_computer(
+    program: Union[List[int], Dict[int, int]], input_, output, label: str
+):
     position = 0
     relative_base = 0
 
@@ -232,8 +234,6 @@ def draw_output(output, draw=True):
         4: '*',
     }
 
-    grid = {}
-
     coords = {}
 
     max_x = 0
@@ -244,7 +244,7 @@ def draw_output(output, draw=True):
     score = 0
 
     for i in range(len(output) // 3):
-        x, y, tile = output[i*3], output[i*3 + 1], output[i*3 + 2]
+        x, y, tile = output[i * 3], output[i * 3 + 1], output[i * 3 + 2]
 
         if x == -1:
             score = tile
@@ -298,7 +298,6 @@ class UserJoystickInputDevice(InputDevice):
         self.output = output
 
     def read(self):
-        print('\n' + draw_output(self.output, draw=True))
         controls = {
             'a': -1,
             's': 0,
@@ -322,7 +321,12 @@ class Day13(Puzzle):
     def part1(self):
         input_ = []
         output = []
-        run_intcode_computer(self.get_data(), ListInputDevice(input_), ListOutputDevice(output), label='part2')
+        run_intcode_computer(
+            self.get_data(),
+            ListInputDevice(input_),
+            ListOutputDevice(output),
+            label='part2',
+        )
 
         grid = draw_output(output)
         c = Counter(grid)
@@ -342,9 +346,11 @@ class Day13(Puzzle):
             if '-d' in sys.argv:
                 input_device.draw = True
 
-        run_intcode_computer(data, input_device, ListOutputDevice(output), label='part2')
+        run_intcode_computer(
+            data, input_device, ListOutputDevice(output), label='part2'
+        )
 
-        return draw_output(output)
+        return '\n' + draw_output(output)
 
 
 def main():
@@ -352,7 +358,3 @@ def main():
 
     print(f'Part 1 Answer: {puzzle.part1()}')
     print(f'Part 2 Answer: {puzzle.part2()}')
-
-
-if __name__ == '__main__':
-    main()

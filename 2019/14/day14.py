@@ -1,4 +1,5 @@
 import sys
+from collections import deque
 
 from aocd.models import Puzzle
 
@@ -136,11 +137,13 @@ class Day14(Puzzle):
 
             total_ore_required = 0
 
-            stack = []
-            stack.append(('FUEL', 1))
+            stack_qty = {'FUEL': 1}
+            stack = deque(['FUEL'])
 
             while stack:
-                name, qty = stack.pop()
+                name = stack.popleft()
+                qty = stack_qty[name]
+                del stack_qty[name]
 
                 if name == 'ORE':
                     total_ore_required += qty
@@ -168,7 +171,11 @@ class Day14(Puzzle):
                 while (qty_required * batches_required) < qty:
                     batches_required += 1
                 for i_name, i_qty in reversed(ingredient_qty[(name, qty_required)]):
-                    stack.append((i_name, i_qty * batches_required))
+                    if i_name in stack_qty:
+                        stack_qty[i_name] += i_qty * batches_required
+                    else:
+                        stack.append(i_name)
+                        stack_qty[i_name] = i_qty * batches_required
                 if (qty_required * batches_required) > qty:
                     left_overs[name] = (qty_required * batches_required) - qty
 
@@ -195,7 +202,3 @@ def main():
 
     print(f'Part 1 Answer: {puzzle.part1()}')
     print(f'Part 2 Answer: {puzzle.part2()}')
-
-
-if __name__ == '__main__':
-    main()

@@ -142,7 +142,7 @@ def print_moons(moons, dimensions):
 
 
 class MoonDimension:
-    PATTERN_SIZE = 9
+    PATTERN_SIZE = 8
 
     def __init__(self, position, velocity):
         self.position = position
@@ -187,7 +187,9 @@ class Day11(Puzzle):
 
     def get_data(self):
         cleaned_data = []
-        for d in self.input_data.splitlines():
+        data = self.input_data
+        data = '''<x=-9, y=-1, z=-1>\n<x=2, y=9, z=5>\n<x=10, y=18, z=-12>\n<x=-6, y=15, z=-7>'''
+        for d in data.splitlines():
             m = re.search(r'<x=(-?\d+), y=(-?\d+), z=(-?\d+)>', d)
             cleaned_data.append(
                 Point(int(m.group(1)), int(m.group(2)), int(m.group(3)))
@@ -253,7 +255,3 @@ def main():
 
     print(f'Part 1 Answer: {puzzle.part1()}')
     print(f'Part 2 Answer: {puzzle.part2()}')
-
-
-if __name__ == '__main__':
-    main()

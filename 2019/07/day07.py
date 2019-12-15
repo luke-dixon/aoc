@@ -2,8 +2,8 @@ import itertools
 import queue
 import threading
 from abc import ABC
-from typing import List, Callable, Dict, Optional
-from ctypes import c_long as c_int
+from dataclasses import dataclass
+from typing import Callable, Dict, List, Optional
 
 from aocd.models import Puzzle
 
@@ -12,11 +12,11 @@ class Halt(Exception):
     pass
 
 
+@dataclass
 class Parameter:
-    def __init__(self, data: List[int], position: int, mode: int):
-        self.data = data
-        self.position = position
-        self.mode = mode
+    data: List[int]
+    position: int
+    mode: int
 
     def get(self):
         if self.mode:
@@ -31,28 +31,17 @@ class Parameter:
             self.data[self.data[self.position]] = value
 
 
+@dataclass
 class Instruction:
-    def __init__(
-        self,
-        data: List[int],
-        position: int,
-        operation: Callable[['Instruction'], int],
-        input_,
-        output,
-        parameter1: Parameter,
-        parameter2: Parameter,
-        parameter3: Parameter,
-        idx: str,
-    ):
-        self.idx = idx
-        self.data = data
-        self.position = position
-        self.operation = operation
-        self.input = input_
-        self.output = output
-        self.parameter1 = parameter1
-        self.parameter2 = parameter2
-        self.parameter3 = parameter3
+    data: List[int]
+    position: int
+    operation: Callable[['Instruction'], int]
+    input: 'InputDevice'
+    output: 'OutputDevice'
+    parameter1: Parameter
+    parameter2: Parameter
+    parameter3: Parameter
+    label: str
 
     def __call__(self):
         return self.operation(self)
@@ -68,9 +57,9 @@ class OutputDevice(ABC):
         pass
 
 
+@dataclass
 class ListInputDevice(InputDevice):
-    def __init__(self, input_list: List[int]):
-        self.list = input_list
+    list: List[int]
 
     def read(self) -> int:
         return self.list.pop(0)
@@ -89,7 +78,7 @@ class QueueInputDevice(InputDevice):
         self.queue = input_queue
 
     def read(self) -> int:
-        return self.queue.get(timeout=1)
+        return self.queue.get()
 
 
 class QueueOutputDevice(OutputDevice):
@@ -97,17 +86,15 @@ class QueueOutputDevice(OutputDevice):
         self.queue = output_queue
 
     def write(self, value: int) -> None:
-        self.queue.put(value, timeout=1)
+        self.queue.put(value)
 
 
 def add(self: Instruction) -> int:
-    value = c_int(self.parameter1.get() + self.parameter2.get()).value
-    self.parameter3.set(value)
+    self.parameter3.set(self.parameter1.get() + self.parameter2.get())
     return self.position + 4
 
 
 def multiply(self: Instruction) -> int:
-    value = c_int(self.parameter1.get() * self.parameter2.get()).value
     self.parameter3.set(self.parameter1.get() * self.parameter2.get())
     return self.position + 4
 
@@ -177,7 +164,7 @@ def instruction_factory(
     position: int,
     input_,
     output,
-    idx: Optional[str] = None,
+    label: Optional[str] = None,
     operations: Optional[Dict[int, Callable[[Instruction], int]]] = None,
 ):
     if operations is None:
@@ -192,7 +179,7 @@ def instruction_factory(
         Parameter(data, position + 1, int(opcode[2])),
         Parameter(data, position + 2, int(opcode[1])),
         Parameter(data, position + 3, int(opcode[0])),
-        idx,
+        label,
     )
 
 
@@ -201,7 +188,9 @@ def run_intcode_computer(program: List[int], input_):
     position = 0
     program = list(program)
     while True:
-        instruction = instruction_factory(program, position, input_, ListOutputDevice(output))
+        instruction = instruction_factory(
+            program, position, input_, ListOutputDevice(output)
+        )
         try:
             position = instruction()
         except Halt:
@@ -209,13 +198,12 @@ def run_intcode_computer(program: List[int], input_):
     return output
 
 
-def run_intcode_computer2(program: List[int], input_, output, idx: str):
+def run_intcode_computer2(program: List[int], input_, output, label: str):
     position = 0
     program = list(program)
+
     while True:
-        instruction = instruction_factory(
-            program, position, input_, output, idx,
-        )
+        instruction = instruction_factory(program, position, input_, output, label,)
         try:
             position = instruction()
         except Halt:
@@ -245,9 +233,7 @@ class Day7(Puzzle):
 
     def part2(self):
         data = self.data
-
         thruster_inputs = []
-
         amplifier_indexes = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
 
         for i in itertools.permutations(range(5, 10)):
@@ -255,15 +241,17 @@ class Day7(Puzzle):
             channels = []
             for _ in range(5):
                 channels.append(queue.Queue())
-            for channel_idx, phase in enumerate(i):
-                channels[channel_idx].put(phase)
+            for channel_index, phase in enumerate(i):
+                channels[channel_index].put(phase)
                 t = threading.Thread(
                     target=run_intcode_computer2,
                     args=(
                         data,
-                        QueueInputDevice(channels[channel_idx]),
-                        QueueOutputDevice(channels[(channel_idx + 1) % len(channels)]),
-                        amplifier_indexes[channel_idx],
+                        QueueInputDevice(channels[channel_index]),
+                        QueueOutputDevice(
+                            channels[(channel_index + 1) % len(channels)]
+                        ),
+                        amplifier_indexes[channel_index],
                     ),
                 )
                 threads.append(t)
@@ -272,14 +260,14 @@ class Day7(Puzzle):
                 channels[0].put(0)
                 amp_e = threads.pop()
                 amp_e.join()
-                amp_e_channel = channels.pop(0)
-                thruster_input = amp_e_channel.get(timeout=5)
-                thruster_inputs.append(thruster_input)
             finally:
                 for channel in channels:
                     channel.put(Halt())
                 for thread in threads:
                     thread.join()
+            amp_e_output_channel = channels.pop(0)  # Or amplifier a input channel
+            thruster_input = amp_e_output_channel.get()
+            thruster_inputs.append(thruster_input)
 
         return max(thruster_inputs)
 
@@ -289,7 +277,3 @@ def main():
 
     print(f'Part 1 Answer: {puzzle.part1()}')
     print(f'Part 2 Answer: {puzzle.part2()}')
-
-
-if __name__ == '__main__':
-    main()

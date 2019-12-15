@@ -2,7 +2,7 @@ import queue
 from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, Callable, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from aocd.models import Puzzle
 
@@ -197,7 +197,9 @@ def instruction_factory(
     )
 
 
-def run_intcode_computer(program: Union[List[int], Dict[int, int]], input_, output, label: str):
+def run_intcode_computer(
+    program: Union[List[int], Dict[int, int]], input_, output, label: str
+):
     position = 0
     relative_base = 0
 
@@ -218,24 +220,40 @@ class Day9(Puzzle):
 
     def get_data(self):
         orig_data = self.input_data
-        #orig_data = '109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99'
-        #orig_data = '1102,34915192,34915192,7,4,7,99,0'
-        #orig_data = '104,1125899906842624,99'
+        # orig_data = '109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99'
+        # orig_data = '1102,34915192,34915192,7,4,7,99,0'
+        # orig_data = '104,1125899906842624,99'
         data = defaultdict(lambda: 0)
         for i, x in enumerate([int(x) for x in orig_data.split(',')]):
+            data[i] = x
+        return data
+
+    def get_data2(self):
+        data = [0] * 1100
+        for i, x in enumerate([int(x) for x in self.input_data.split(',')]):
             data[i] = x
         return data
 
     def part1(self):
         input_ = [1]
         output = []
-        run_intcode_computer(self.get_data(), ListInputDevice(input_), ListOutputDevice(output), label='part1')
+        run_intcode_computer(
+            self.get_data2(),
+            ListInputDevice(input_),
+            ListOutputDevice(output),
+            label='part1',
+        )
         return output[0]
 
     def part2(self):
         input_ = [2]
         output = []
-        run_intcode_computer(self.get_data(), ListInputDevice(input_), ListOutputDevice(output),label='part2')
+        run_intcode_computer(
+            self.get_data2(),
+            ListInputDevice(input_),
+            ListOutputDevice(output),
+            label='part2',
+        )
         return output[0]
 
 
@@ -244,7 +262,3 @@ def main():
 
     print(f'Part 1 Answer: {puzzle.part1()}')
     print(f'Part 2 Answer: {puzzle.part2()}')
-
-
-if __name__ == '__main__':
-    main()

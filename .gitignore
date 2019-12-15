@@ -1,1 +1,5 @@
 input*.txt
+__pycache__
+*.swp
+*.orig
+*.new

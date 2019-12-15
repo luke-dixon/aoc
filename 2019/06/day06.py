@@ -1,6 +1,6 @@
 from collections import defaultdict
-import networkx
 
+import networkx
 from aocd.models import Puzzle
 
 
@@ -57,7 +57,3 @@ def main():
 
     print(f'Part 1 Answer: {puzzle.part1()}')
     print(f'Part 2 Answer: {puzzle.part2()}')
-
-
-if __name__ == '__main__':
-    main()

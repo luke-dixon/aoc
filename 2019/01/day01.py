@@ -1,5 +1,7 @@
 from typing import List
 
+from aocd.models import Puzzle
+
 
 def calc_fuel(x: int, recursive: bool = False):
     fuel_required = x // 3
@@ -13,21 +15,22 @@ def calc_fuel(x: int, recursive: bool = False):
     return fuel_required
 
 
-def part1(data: List[int]) -> int:
-    return sum(calc_fuel(x) for x in data)
+class Day01(Puzzle):
+    def __init__(self):
+        super().__init__(year=2019, day=1)
 
+    def get_data(self) -> List[int]:
+        return [int(x) for x in self.input_data.splitlines()]
 
-def part2(data: List[int]) -> int:
-    return sum(calc_fuel(x, recursive=True) for x in data)
+    def part1(self) -> int:
+        return sum(calc_fuel(x) for x in self.get_data())
+
+    def part2(self) -> int:
+        return sum(calc_fuel(x, recursive=True) for x in self.get_data())
 
 
 def main():
-    with open('input1.txt') as f:
-        data = [int(x) for x in f.read().splitlines()]
+    puzzle = Day01()
 
-    print(f'Answer part 1: {part1(data)}')
-    print(f'Answer part 2: {part2(data)}')
-
-
-if __name__ == "__main__":
-    main()
+    print(f'Answer part 1: {puzzle.part1()}')
+    print(f'Answer part 2: {puzzle.part2()}')

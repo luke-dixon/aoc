@@ -9,7 +9,7 @@ def format_layer(layer, width=25, height=6):
     s = ''
     for i in range(height):
         for j in range(width):
-            s += layer[i*width + j]
+            s += layer[i * width + j]
         s += '\n'
     return s
 
@@ -28,10 +28,14 @@ class layers(Sequence):
         if isinstance(item, int):
             if item >= len(self):
                 raise IndexError
-            return self.data[item * self.layer_length:(item * self.layer_length) + self.layer_length]
+            return self.data[
+                item * self.layer_length : (item * self.layer_length)
+                + self.layer_length
+            ]
         else:
-            raise NotImplementedError(f'Indexing by {type(item)} has not been implemented')
-
+            raise NotImplementedError(
+                f'Indexing by {type(item)} has not been implemented'
+            )
 
 
 class Day8(Puzzle):
@@ -67,7 +71,3 @@ def main():
 
     print(f'Part 1 Answer: {puzzle.part1()}')
     print(f'Part 2 Answer: {puzzle.part2()}')
-
-
-if __name__ == '__main__':
-    main()

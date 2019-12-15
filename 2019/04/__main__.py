@@ -1,4 +1,4 @@
-from .day15 import main
+from .day04 import main
 
 if __name__ == '__main__':
     main()
