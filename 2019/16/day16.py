@@ -1,3 +1,5 @@
+from collections import deque
+
 from .. import puzzle
 
 
@@ -64,16 +66,17 @@ class Day16(puzzle.Puzzle):
 
         totals = list(data) * 10000
         offset = int(''.join(str(x) for x in totals[:7]))
+        totals = totals[offset:]
 
         for _ in range(100):
             signal = totals
-            totals = [0] * len(data) * 10000
+            totals = deque()
             total = 0
-            for i in reversed(range(offset, len(data) * 10000)):
-                total += signal[i]
-                totals[i] = abs(total) % 10
+            for x in reversed(signal):
+                total += x
+                totals.appendleft(abs(total) % 10)
 
-        return ''.join(str(x) for x in totals[offset : offset + 8])
+        return ''.join(str(x) for x in [totals.popleft() for _ in range(8)])
 
     def main(self):
         print(f'Part 1 Answer: {self.part1()}')
