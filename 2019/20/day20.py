@@ -53,9 +53,9 @@ class Grid(Mapping):
         for pos, c in self.portals_by_pos.items():
             if (pos[0] + 1, pos[1]) in self.portals_by_pos:
                 c2 = self.portals_by_pos[pos[0] + 1, pos[1]]
-                if (pos[0] - 1, pos[1]) in self.data and self.data[
-                    (pos[0] - 1, pos[1])
-                ] == '.':
+                if (pos[0] - 1,
+                        pos[1]) in self.data and self.data[(pos[0] - 1,
+                                                            pos[1])] == '.':
                     open_space = (pos[0] - 1, pos[1])
                 else:
                     open_space = (pos[0] + 2, pos[1])
@@ -72,9 +72,8 @@ class Grid(Mapping):
 
             if (pos[0], pos[1] + 1) in self.portals_by_pos:
                 c2 = self.portals_by_pos[pos[0], pos[1] + 1]
-                if (pos[0], pos[1] - 1) in self.data and self.data[
-                    (pos[0], pos[1] - 1)
-                ] == '.':
+                if (pos[0], pos[1] - 1) in self.data and self.data[(
+                        pos[0], pos[1] - 1)] == '.':
                     open_space = (pos[0], pos[1] - 1)
                 else:
                     open_space = (pos[0], pos[1] + 2)
@@ -103,7 +102,7 @@ class Grid(Mapping):
         for portal, open_spaces in self.portal_to_open_spaces.items():
             for open_space in open_spaces:
                 if len(open_spaces.difference({open_space})) == 1:
-                    (other,) = open_spaces.difference({open_space})
+                    (other, ) = open_spaces.difference({open_space})
                     self.warp_to[open_space] = other
 
         self.neighbours = {}
@@ -111,16 +110,17 @@ class Grid(Mapping):
             self.neighbours[position] = set()
             for y in [-1, 1]:
                 if (position[0] + y, position[1]) in self.data:
-                    self.neighbours[position].add((position[0] + y, position[1]))
+                    self.neighbours[position].add(
+                        (position[0] + y, position[1]))
             for x in [-1, 1]:
                 if (position[0], position[1] + x) in self.data:
-                    self.neighbours[position].add((position[0], position[1] + x))
+                    self.neighbours[position].add(
+                        (position[0], position[1] + x))
 
         self.inner_portals = set()
         for position in self.open_space_to_portal:
             if (self.min_y + 3 < position[0] < self.max_y - 3) and (
-                self.min_x + 3 < position[1] < self.max_x - 3
-            ):
+                    self.min_x + 3 < position[1] < self.max_x - 3):
                 self.inner_portals.add(position)
 
 
@@ -136,13 +136,16 @@ class BFSp1(bfs.BFS):
 
     def initialise_queue(self):
         self.q.clear()
-        self.q.append(State(self.grid.start_position, 0,))
+        self.q.append(State(
+            self.grid.start_position,
+            0,
+        ))
 
     def break_condition(self, state):
         return state.position == self.grid.end_position
 
     def skip_state_condition(self, state):
-        if (state.position,) in self.visited:
+        if (state.position, ) in self.visited:
             return True
 
     def add_to_visited(self, state):
@@ -157,8 +160,8 @@ class BFSp1(bfs.BFS):
         elif neighbour in self.grid.portals_by_pos:
             if state.position in self.grid.warp_to:
                 self.q.append(
-                    State(self.grid.warp_to[state.position], state.path_length + 1)
-                )
+                    State(self.grid.warp_to[state.position],
+                          state.path_length + 1))
         elif self.grid[neighbour] == '.':
             self.q.append(State(neighbour, state.path_length + 1))
         else:
@@ -173,13 +176,20 @@ class BFSp2(BFSp1):
 
     def initialise_queue(self):
         self.q.clear()
-        self.q.append(State2(self.grid.start_position, 0, 0,))
+        self.q.append(State2(
+            self.grid.start_position,
+            0,
+            0,
+        ))
 
     def break_condition(self, state):
         return state.position == self.grid.end_position and state.level == 0
 
     def skip_state_condition(self, state):
-        if (state.position, state.level,) in self.visited:
+        if (
+                state.position,
+                state.level,
+        ) in self.visited:
             return True
 
     def add_to_visited(self, state):
@@ -195,8 +205,7 @@ class BFSp2(BFSp1):
                                 self.grid.warp_to[state.position],
                                 state.path_length + 1,
                                 state.level + 1,
-                            )
-                        )
+                            ))
                 else:
                     if state.level > self.min_level:
                         self.q.append(
@@ -204,12 +213,12 @@ class BFSp2(BFSp1):
                                 self.grid.warp_to[state.position],
                                 state.path_length + 1,
                                 state.level - 1,
-                            )
-                        )
+                            ))
         elif (neighbour, state.level) in self.visited:
             return
         elif self.grid[neighbour] == '.':
-            self.q.append(State2(neighbour, state.path_length + 1, state.level))
+            self.q.append(State2(neighbour, state.path_length + 1,
+                                 state.level))
         else:
             assert False, 'unhandled neighbour'
 
