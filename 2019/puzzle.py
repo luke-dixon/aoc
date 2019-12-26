@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from aocd.models import Puzzle as BasePuzzle
+from aocd.models import Puzzle as BasePuzzle, User
 
 import argparse
 
@@ -18,6 +18,8 @@ class Puzzle(BasePuzzle):
         self.add_additional_args(parser)
 
         self.args = parser.parse_args(args)
+        if not user:
+            user = User('') if self.args.file else None
 
         super().__init__(self.year, int(self.day), user=user)
 
