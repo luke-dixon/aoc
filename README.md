@@ -24,6 +24,11 @@ Alternatively you can export `AOC_SESSION` to retrieve the input data.
 python -m 2019.15
 ```
 
+Run tests for a day (not all days have tests):
+```
+python -m unittest discover -v 2019.01
+```
+
 ## 2017-2018
 
 These are in individual directories and you run them individually. They open an input file with the data in it which you will need to supply yourself.

@@ -15,6 +15,14 @@ def calc_fuel(x: int, recursive: bool = False):
     return fuel_required
 
 
+def part1(data: List[int]) -> int:
+    return sum(calc_fuel(x) for x in data)
+
+
+def part2(data: List[int]) -> int:
+    return sum(calc_fuel(x, recursive=True) for x in data)
+
+
 class Day01(puzzle.Puzzle):
     year = '2019'
     day = '1'
@@ -22,12 +30,6 @@ class Day01(puzzle.Puzzle):
     def get_data(self) -> List[int]:
         return [int(x) for x in self.input_data.splitlines()]
 
-    def part1(self) -> int:
-        return sum(calc_fuel(x) for x in self.get_data())
-
-    def part2(self) -> int:
-        return sum(calc_fuel(x, recursive=True) for x in self.get_data())
-
     def run(self):
-        print(f'Answer part 1: {self.part1()}')
-        print(f'Answer part 2: {self.part2()}')
+        print(f'Answer part 1: {part1(self.get_data())}')
+        print(f'Answer part 2: {part2(self.get_data())}')
