@@ -1,11 +1,9 @@
 # My AOC solutions
 
-All of these are ugly and bad. Don't look at them please.
-
 These are my solutions for [Advent of Code](https://adventofcode.com/)
 
 For the first commit for each solution it is as close to what got me the solution as I have.
-Some of them I just played around inside the Python interpreter, so those ones are especially ugly.
+Some of them I just played around inside the Python interpreter, so those ones are especially ugly :)
 
 ## 2019
 
