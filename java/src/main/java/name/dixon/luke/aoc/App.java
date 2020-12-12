@@ -11,7 +11,8 @@ public class App {
     static Map<String, Day> days = Map.ofEntries(
             entry("2019.01", new Y2019Day01()),
             entry("2019.02", new Y2019Day02()),
-            entry("2020.01", new Y2020Day01())
+            entry("2020.01", new Y2020Day01()),
+            entry("2020.02", new Y2020Day02())
     );
 
     private static void usage() {
