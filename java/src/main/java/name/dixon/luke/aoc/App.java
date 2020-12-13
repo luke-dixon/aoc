@@ -16,7 +16,8 @@ public class App {
             entry("2020.03", new Y2020Day03()),
             entry("2020.04", new Y2020Day04()),
             entry("2020.05", new Y2020Day05()),
-            entry("2020.06", new Y2020Day06())
+            entry("2020.06", new Y2020Day06()),
+            entry("2020.07", new Y2020Day07())
     );
 
     private static void usage() {
