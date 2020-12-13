@@ -2,7 +2,7 @@
 
 These are my solutions for [Advent of Code](https://adventofcode.com/)
 
-## 2019 Python
+## 2019-2020 Python
 
 Check the README.md under the python directory
 
