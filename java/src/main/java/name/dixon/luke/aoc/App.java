@@ -13,7 +13,8 @@ public class App {
             entry("2019.02", new Y2019Day02()),
             entry("2020.01", new Y2020Day01()),
             entry("2020.02", new Y2020Day02()),
-            entry("2020.03", new Y2020Day03())
+            entry("2020.03", new Y2020Day03()),
+            entry("2020.04", new Y2020Day04())
     );
 
     private static void usage() {
