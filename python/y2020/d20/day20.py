@@ -1,345 +1,186 @@
-from collections import *
-from functools import reduce
-from itertools import *
-from pprint import pprint
+import random
+from collections import Counter, defaultdict, deque
+from collections.abc import Sequence
+from functools import cached_property, reduce
 
 import networkx as nx
-import re
+
+from lib import chargrid
 
 from .. import puzzle
 
+SEA_MONSTER = '''\
+                  #
+#    ##    ##    ###
+ #  #  #  #  #  #\
+'''
 
-Tile = namedtuple('Tile', ['lines', 'top_edge', 'right_edge', 'bottom_edge', 'left_edge'])
-
-TOP_EDGE = 'top_edge'
-BOTTOM_EDGE = 'bottom_edge'
-RIGHT_EDGE = 'right_edge'
-LEFT_EDGE = 'left_edge'
-EDGES = [TOP_EDGE, RIGHT_EDGE, BOTTOM_EDGE, LEFT_EDGE]
-LINES = 'lines'
+EDGES = ['top_edge', 'right_edge', 'bottom_edge', 'left_edge']
 
 
-def rotate_grid(grid):
-    new_grid = []
-    for y, row in enumerate(grid):
-        new_grid.append([grid[x][len(grid) - y - 1] for x, c in enumerate(row)])
+class Tile:
+    def __init__(self, grid: chargrid.Grid):
+        self.grid = grid
+        self.top_edge = ''.join(grid[0])
+        self.bottom_edge = ''.join(grid[-1])
+        self.right_edge = ''.join([grid[y][-1] for y in range(len(grid))])
+        self.left_edge = ''.join([grid[y][0] for y in range(len(grid))])
 
-    return new_grid
+    def get_possible_edges(self) -> Sequence[str]:
+        return [
+            self.top_edge,
+            self.right_edge,
+            self.bottom_edge,
+            self.left_edge,
+            self.top_edge[::-1],
+            self.right_edge[::-1],
+            self.bottom_edge[::-1],
+            self.left_edge[::-1],
+        ]
 
 
-def assert_edges_consistent(tile):
-    lines = tile[LINES]
-    assert ''.join(lines[0]) == ''.join(tile[TOP_EDGE]), f"{''.join(lines[0])} != {''.join(tile[TOP_EDGE])}"
-    assert ''.join(lines[-1]) == ''.join(tile[BOTTOM_EDGE]), f"{''.join(lines[-1])} != {''.join(tile[BOTTOM_EDGE])}"
-    assert ''.join([lines[y][0] for y in range(len(tile[LINES]))]) == ''.join(tile[LEFT_EDGE]), f"{''.join([lines[y][0] for y in range(len(tile[LINES]))])} != {''.join(tile[LEFT_EDGE])}"
-    assert ''.join([lines[y][-1] for y in range(len(tile[LINES]))]) == ''.join(tile[RIGHT_EDGE]), f"{''.join([c for c in lines[y][-1] for y in range(len(tile[LINES]))])} != {''.join(tile[RIGHT_EDGE])}"
+class Tiles(dict):
+    def __init__(self):
+        super().__init__()
+        self._edge_pieces = []
+        self._corner_pieces = []
+        self._other_pieces = []
+
+    @classmethod
+    def from_data(cls, data):
+        tiles = cls()
+
+        grid_by_id = {}
+        current_tile_id = None
+        for line in data.splitlines():
+            if line.startswith('Tile '):
+                current_tile_id = int(line.split(' ')[1].rstrip(':'))
+                grid_by_id[current_tile_id] = []
+            elif line == '':
+                current_tile_id = None
+            else:
+                grid_by_id[current_tile_id].append([c for c in line])
+
+        for tile_id, grid in grid_by_id.items():
+            tiles[tile_id] = Tile(grid)
+
+        return tiles
+
+    def _set_piece_types(self):
+        edge_counter = Counter()
+        for tile_id, tile in self.items():
+            edge_counter.update(tile.get_possible_edges())
+
+        self._edge_pieces = []
+        self._corner_pieces = []
+        self._other_pieces = []
+        for tile_id, tile in self.items():
+            edges = 0
+            for edge in EDGES:
+                if edge_counter[getattr(tile, edge)] == 1:
+                    edges += 1
+            if edges == 0:
+                self._other_pieces.append(tile_id)
+            elif edges == 1:
+                self._edge_pieces.append(tile_id)
+            elif edges == 2:
+                self._corner_pieces.append(tile_id)
+            else:
+                assert False, f"This piece has too many edges: {tile_id}"
+
+        assert (
+            len(self._corner_pieces) == 4
+        ), f"Wrong number of corner pieces found: {self._corner_pieces}"
+
+    @property
+    def edge_pieces(self):
+        if not self._edge_pieces:
+            self._set_piece_types()
+        return self._edge_pieces
+
+    @property
+    def corner_pieces(self):
+        if not self._corner_pieces:
+            self._set_piece_types()
+        return self._corner_pieces
+
+    @property
+    def other_pieces(self):
+        if not self._other_pieces:
+            self._set_piece_types()
+        return self._other_pieces
+
+    @cached_property
+    def by_edge(self):
+        tile_by_edge = defaultdict(set)
+        for tile_id, tile in self.items():
+            for edge in EDGES:
+                tile_by_edge[getattr(tile, edge)].add(tile_id)
+                tile_by_edge[getattr(tile, edge)[::-1]].add(tile_id)
+        return dict(tile_by_edge)
 
 
-def rotate_left(tile):
-    lines = tile[LINES]
-    assert_edges_consistent(tile)
+def get_sea_monster_coords():
+    sea_monster_coords = []
+    for y, line in enumerate(SEA_MONSTER.splitlines()):
+        for x, c in enumerate(line):
+            if c == '#':
+                sea_monster_coords.append((y, x))
+    return sea_monster_coords
 
-    (
-        tile[TOP_EDGE],
-        tile[RIGHT_EDGE],
-        tile[BOTTOM_EDGE],
-        tile[LEFT_EDGE]
-    ) = (
-        tile[RIGHT_EDGE],
-        tile[BOTTOM_EDGE][::-1],
-        tile[LEFT_EDGE],
-        tile[TOP_EDGE][::-1]
-    )
-    new_lines = []
-    for y, row in enumerate(tile['lines']):
-        new_lines.append([lines[x][len(lines) - y - 1] for x, c in enumerate(row)])
 
-    tile['lines'] = new_lines
-    print('rotate_left')
-
-    assert_edges_consistent(tile)
-
-def flip_tile(tile):
-    assert_edges_consistent(tile)
-
-    (
-        tile[TOP_EDGE],
-        tile[RIGHT_EDGE],
-        tile[BOTTOM_EDGE],
-        tile[LEFT_EDGE]
-    ) = (
-        tile[BOTTOM_EDGE],
-        tile[RIGHT_EDGE][::-1],
-        tile[TOP_EDGE],
-        tile[LEFT_EDGE][::-1]
-    )
-    lines = tile[LINES]
-    new_lines = list(reversed(lines))
-
-    tile['lines'] = new_lines
-    print('flip_tile')
-    pprint(tile)
-
-    assert_edges_consistent(tile)
+def search_for_sea_monsters(grid2, sea_monster_coords):
+    sea_monsters = []
+    for y, row in enumerate(grid2):
+        for x, c in enumerate(row):
+            found = True
+            for my, mx in sea_monster_coords:
+                try:
+                    if grid2[y + my][x + mx] != '#':
+                        found = False
+                        break
+                except IndexError:
+                    found = False
+                    break
+            if found:
+                sea_monsters.append((y, x))
+    return sea_monsters
 
 
 class Day20(puzzle.Puzzle):
     year = '2020'
     day = '20'
 
-    def get_data(self):
-        orig_data = self.input_data.splitlines()
-        data = orig_data
-
-        data = '''Tile 2311:
-..##.#..#.
-##..#.....
-#...##..#.
-####.#...#
-##.##.###.
-##...#.###
-.#.#.#..##
-..#....#..
-###...#.#.
-..###..###
-
-Tile 1951:
-#.##...##.
-#.####...#
-.....#..##
-#...######
-.##.#....#
-.###.#####
-###.##.##.
-.###....#.
-..#.#..#.#
-#...##.#..
-
-Tile 1171:
-####...##.
-#..##.#..#
-##.#..#.#.
-.###.####.
-..###.####
-.##....##.
-.#...####.
-#.##.####.
-####..#...
-.....##...
-
-Tile 1427:
-###.##.#..
-.#..#.##..
-.#.##.#..#
-#.#.#.##.#
-....#...##
-...##..##.
-...#.#####
-.#.####.#.
-..#..###.#
-..##.#..#.
-
-Tile 1489:
-##.#.#....
-..##...#..
-.##..##...
-..#...#...
-#####...#.
-#..#.#.#.#
-...#.#.#..
-##.#...##.
-..##.##.##
-###.##.#..
-
-Tile 2473:
-#....####.
-#..#.##...
-#.##..#...
-######.#.#
-.#...#.#.#
-.#########
-.###.#..#.
-########.#
-##...##.#.
-..###.#.#.
-
-Tile 2971:
-..#.#....#
-#...###...
-#.#.###...
-##.##..#..
-.#####..##
-.#..####.#
-#..#.#..#.
-..####.###
-..#.#.###.
-...#.#.#.#
-
-Tile 2729:
-...#.#.#.#
-####.#....
-..#.#.....
-....#..#.#
-.##..##.#.
-.#.####...
-####.#.#..
-##.####...
-##..#.##..
-#.##...##.
-
-Tile 3079:
-#.#.#####.
-.#..######
-..#.......
-######....
-####.#..#.
-.#...#.##.
-#.#####.##
-..#.###...
-..#.......
-..#.###...'''.splitlines()
-
-        data = orig_data
-
-        tiles = {}
-        current_tile = None
-        current_tile_value = {}
-        for line in data:
-            if line.startswith('Tile '):
-                current_tile = int(line.split(' ')[1].rstrip(':'))
-                tiles[current_tile] = {'lines': []}
-            elif line == '':
-                current_tile = None
-            else:
-                print(current_tile)
-                tiles[current_tile]['lines'].append([c for c in line])
-
-        for tile, value in tiles.items():
-            lines = value['lines']
-
-            right_edge = left_edge = [lines[y][-1] for y in range(len(lines))]
-
-            left_edge = [lines[y][0] for y in range(len(lines))]
-
-            # Top
-            value[TOP_EDGE] = lines[0]
-            # Right
-            value[RIGHT_EDGE] = right_edge
-            # Bottom
-            value[BOTTOM_EDGE] = lines[-1]
-            # Left
-            value[LEFT_EDGE] = left_edge
+    @cached_property
+    def tiles(self):
+        tiles = Tiles.from_data(self.input_data)
 
         return tiles
 
     def part1(self):
-        tiles = self.get_data()
-
-        pprint(tiles)
-
-        edge_counter = Counter()
-        for tile_id, tile in tiles.items():
-            edge_counter.update([
-                ''.join(tile[TOP_EDGE]),
-                ''.join(tile[RIGHT_EDGE]),
-                ''.join(tile[BOTTOM_EDGE]),
-                ''.join(tile[LEFT_EDGE]),
-                ''.join(tile[TOP_EDGE][::-1]),
-                ''.join(tile[RIGHT_EDGE][::-1]),
-                ''.join(tile[BOTTOM_EDGE][::-1]),
-                ''.join(tile[LEFT_EDGE][::-1]),
-            ])
-
-        pprint(edge_counter)
-
-        edge_pieces = []
-        corner_pieces = []
-        other_pieces = []
-        for tile_id, tile in tiles.items():
-            edges = 0
-            for edge in [TOP_EDGE, RIGHT_EDGE, BOTTOM_EDGE, LEFT_EDGE]:
-                if edge_counter[''.join(tile[edge])] == 1:
-                    edges += 1
-            if edges == 0:
-                other_pieces.append(tile_id)
-            elif edges == 1:
-                edge_pieces.append(tile_id)
-            elif edges  == 2:
-                corner_pieces.append(tile_id)
-            else:
-                assert False, f"This piece has too many edges: {tile_id}"
-
-        assert len(corner_pieces) == 4, f"Too many corner pieces found: {corner_pieces}"
-
-        return reduce(lambda x, y: x * y, corner_pieces)
+        return reduce(lambda x, y: x * y, self.tiles.corner_pieces)
 
     def part2(self):
 
-        tiles = self.get_data()
-
-        pprint(tiles)
+        tiles = self.tiles
 
         edge_counter = Counter()
         for tile_id, tile in tiles.items():
-            edge_counter.update([
-                ''.join(tile[TOP_EDGE]),
-                ''.join(tile[RIGHT_EDGE]),
-                ''.join(tile[BOTTOM_EDGE]),
-                ''.join(tile[LEFT_EDGE]),
-                ''.join(tile[TOP_EDGE][::-1]),
-                ''.join(tile[RIGHT_EDGE][::-1]),
-                ''.join(tile[BOTTOM_EDGE][::-1]),
-                ''.join(tile[LEFT_EDGE][::-1]),
-            ])
+            edge_counter.update(tile.get_possible_edges())
 
-        pprint(edge_counter)
-
-        tile_by_edge = defaultdict(set)
-        for tile_id, tile in tiles.items():
-            for edge in [TOP_EDGE, RIGHT_EDGE, BOTTOM_EDGE, LEFT_EDGE]:
-                tile_by_edge[''.join(tile[edge])].add(tile_id)
-                tile_by_edge[''.join(tile[edge][::-1])].add(tile_id)
-
-        edge_pieces = []
-        corner_pieces = []
-        other_pieces = []
-        for tile_id, tile in tiles.items():
-            edges = 0
-            for edge in [TOP_EDGE, RIGHT_EDGE, BOTTOM_EDGE, LEFT_EDGE]:
-                if edge_counter[''.join(tile[edge])] == 1:
-                    edges += 1
-            if edges == 0:
-                other_pieces.append(tile_id)
-            elif edges == 1:
-                edge_pieces.append(tile_id)
-            elif edges == 2:
-                corner_pieces.append(tile_id)
-            else:
-                assert False, f"This piece has too many edges: {tile_id}"
-
-        assert len(corner_pieces) == 4, f"Too many corner pieces found: {corner_pieces}"
-
-        print(corner_pieces)
-        print(len(edge_pieces) / 4)
-
-        edge_pieces = set(edge_pieces)
-        #corner_pieces = set(corner_pieces)
-        other_pieces = set(other_pieces)
-
-        edges = []
-        current_edge = None
-        graph = nx.Graph()
-        for corner_piece in corner_pieces:
+        for corner_tile in tiles.corner_pieces:
             corner_piece_edges = []
-            for edge in [TOP_EDGE, RIGHT_EDGE, BOTTOM_EDGE, LEFT_EDGE]:
-                tile = tiles[corner_piece]
-                if edge_counter[''.join(tile[edge])] != 2:
-                    corner_piece_edges.append(''.join(tile[edge]))
+            for edge in EDGES:
+                tile = tiles[corner_tile]
+                if edge_counter[getattr(tile, edge)] != 2:
+                    corner_piece_edges.append(getattr(tile, edge))
             assert len(corner_piece_edges) == 2
 
+        # Build graph of which tiles join with which other tiles
         queue = deque()
-        queue.append(list(corner_pieces)[0])
+        queue.append(tiles.corner_pieces[0])
         visited = set()
+        graph = nx.Graph()
         while queue:
             current_tile_id = queue.popleft()
             current_tile = tiles[current_tile_id]
@@ -348,154 +189,161 @@ Tile 3079:
             visited.add(current_tile_id)
 
             for edge in EDGES:
-                if ''.join(current_tile[edge]) in tile_by_edge:
-                    next_edges = list(tile_by_edge[''.join(current_tile[edge])] - {current_tile_id})
+                if ''.join(getattr(current_tile, edge)) in tiles.by_edge:
+                    next_edges = list(
+                        tiles.by_edge[getattr(current_tile, edge)] - {current_tile_id}
+                    )
                     if next_edges:
-                        assert len(next_edges) == 1, f'next_edges length not 1, {next_edges}'
+                        assert (
+                            len(next_edges) == 1
+                        ), f'next_edges length not 1, {next_edges}'
                         queue.append(next_edges[0])
                         graph.add_edge(current_tile_id, next_edges[0])
 
-        pprint(graph[list(corner_pieces)[0]])
-        pprint(list(graph[list(corner_pieces)[0]]))
+        # Figure out which corners go where
 
-        corners = list(corner_pieces)[0], list(corner_pieces)[2]
-        side1 = nx.shortest_path(graph, *corners)
-        corners = list(corner_pieces)[0], list(corner_pieces)[3]
-        side2 = nx.shortest_path(graph, *corners)
-        corners = list(corner_pieces)[2], list(corner_pieces)[1]
-        side3 = nx.shortest_path(graph, *corners)
-        corners = list(corner_pieces)[3], list(corner_pieces)[1]
-        side4 = nx.shortest_path(graph, *corners)
-        assert len(side1) == len(side2) == len(side3) == len(side4)
+        # Choose an arbitrary corner tile to be the top left tile
+        top_left_corner_tile = random.choice(tiles.corner_pieces)
 
-        grid = []
-        for x in range(len(side2)):
-            grid.append([None] * len(side1))
+        # Find the shortest paths to each of the other corners
+        shortest_paths = {}
+        for corner_tile in tiles.corner_pieces:
+            if corner_tile != top_left_corner_tile:
+                shortest_paths[corner_tile] = nx.shortest_path(
+                    graph, top_left_corner_tile, corner_tile
+                )
 
-        grid[0] = side1
-        for i, tile_id in enumerate(side2):
-            grid[i][0] = tile_id
-        grid[-1] = side4
-        for i, tile_id in enumerate(side3):
-            grid[i][-1] = tile_id
+        # The furthest away is the bottom left
+        bottom_right_corner_tile = None
+        for corner in shortest_paths:
+            if bottom_right_corner_tile not in shortest_paths:
+                bottom_right_corner_tile = corner
+            else:
+                if len(shortest_paths[corner]) > len(
+                    shortest_paths[bottom_right_corner_tile]
+                ):
+                    bottom_right_corner_tile = corner
 
+        # It doesn't matter which the other two are
+        top_right_corner_tile, bottom_left_corner_tile = random.sample(
+            set(shortest_paths.keys()) - {bottom_right_corner_tile}, 2
+        )
+
+        top_edge_tiles = shortest_paths[top_right_corner_tile]
+        left_edge_tiles = shortest_paths[bottom_left_corner_tile]
+        right_edge_tiles = nx.shortest_path(
+            graph, top_right_corner_tile, bottom_right_corner_tile
+        )
+        bottom_edge_tiles = nx.shortest_path(
+            graph, bottom_left_corner_tile, bottom_right_corner_tile
+        )
+        assert (
+            len(top_edge_tiles)
+            == len(left_edge_tiles)
+            == len(right_edge_tiles)
+            == len(bottom_edge_tiles)
+        )
+
+        # Next we want to figure out where each tile goes
+        # First, create a grid with empty slots
+        tile_grid = []
+        for x in range(len(left_edge_tiles)):
+            tile_grid.append([None] * len(top_edge_tiles))
+
+        # Now place the top corners and edge pieces on the grid
+        tile_grid[0] = top_edge_tiles
+
+        # Place the left corners and edge pieces on the grid
+        for i, tile_id in enumerate(left_edge_tiles):
+            tile_grid[i][0] = tile_id
+
+        # Place the bottom corners and edge pieces on the grid
+        tile_grid[-1] = bottom_edge_tiles
+
+        # Place the right corners and edge pieces on the grid
+        for i, tile_id in enumerate(right_edge_tiles):
+            tile_grid[i][-1] = tile_id
+
+        # Add the rest of the pieces to the grid by checking against the left and top tiles
         for row in range(1, 12):
             for col in range(1, 12):
-                grid[row][col] = list((set(graph[grid[row - 1][col]]) & set(graph[grid[row][col - 1]])) - {grid[row - 1][col - 1]})[0]
+                tile_grid[row][col] = list(
+                    (
+                        set(graph[tile_grid[row - 1][col]])
+                        & set(graph[tile_grid[row][col - 1]])
+                    )
+                    - {tile_grid[row - 1][col - 1]}
+                )[0]
 
-        pprint(grid)
-        flip_tile(tiles[grid[0][0]])
-        rotate_left(tiles[grid[0][0]])
-        rotate_left(tiles[grid[0][0]])
+        # Get top left tile in correct orientation
+        for tile_lines in chargrid.symmetries(tiles[tile_grid[0][0]].grid):
+            tiles[tile_grid[0][0]] = Tile(tile_lines)
+            if all(
+                [
+                    len(tiles.by_edge[tiles[tile_grid[0][0]].top_edge]) == 1,
+                    len(tiles.by_edge[tiles[tile_grid[0][0]].left_edge]) == 1,
+                    tiles[tile_grid[0][0]].right_edge
+                    in tiles[tile_grid[0][1]].get_possible_edges(),
+                ]
+            ):
+                break
+        else:
+            assert False, "Couldn't find correct orientation for top left grid"
 
-        print(tile_by_edge[''.join(tiles[grid[0][0]][TOP_EDGE])], tile_by_edge[''.join(tiles[grid[0][0]][LEFT_EDGE])], tile_by_edge[''.join(tiles[grid[0][0]][RIGHT_EDGE])], tile_by_edge[''.join(tiles[grid[0][0]][BOTTOM_EDGE])])
-        pprint(tiles[grid[0][0]])
-
-        assert len(tile_by_edge[''.join(tiles[grid[0][0]][TOP_EDGE])]) == 1
-        assert len(tile_by_edge[''.join(tiles[grid[0][0]][LEFT_EDGE])]) == 1
-
-        for i in range(4):
-            rotate_left(tiles[grid[0][1]])
-        pprint(tiles[grid[0][1]])
-        for y, row in enumerate(grid):
+        # Get rest of tiles in correct orientation
+        for y, row in enumerate(tile_grid):
             for x, col in enumerate(row):
-                print(y, x)
-                rotates = 0
-                flips = 0
-                while True:
-                    above_y = y - 1
-                    left_x = x - 1
+                current_tile = tiles[tile_grid[y][x]]
+                above_y = y - 1
+                left_x = x - 1
+                for tiles_grid in chargrid.symmetries(current_tile.grid):
+                    tiles[tile_grid[y][x]] = current_tile = Tile(tiles_grid)
                     matched_y, matched_x = None, None
                     if above_y >= 0:
-                        matched_y = tiles[grid[above_y][x]][BOTTOM_EDGE] == tiles[grid[y][x]][TOP_EDGE]
+                        matched_y = (
+                            tiles[tile_grid[above_y][x]].bottom_edge
+                            == current_tile.top_edge
+                        )
                     if left_x >= 0:
-                        matched_x = tiles[grid[y][left_x]][RIGHT_EDGE] == tiles[grid[y][x]][LEFT_EDGE]
+                        matched_x = (
+                            tiles[tile_grid[y][left_x]].right_edge
+                            == current_tile.left_edge
+                        )
 
-                    if matched_y and matched_x:
+                    if any(
+                        [
+                            matched_y and matched_x,
+                            matched_y is None and matched_x,
+                            matched_x is None and matched_y,
+                            matched_x is None and matched_y is None,
+                        ]
+                    ):
                         break
-                    elif matched_y is None and matched_x:
-                        break
-                    elif matched_x is None and matched_y:
-                        break
-                    elif matched_x is None and matched_y is None:
-                        assert (y, x) == (0, 0)
-                        break
-                    elif flips >= 1 and rotates >= 4:
-                        assert False, "Not found"
-                    elif rotates >= 4:
-                        flip_tile(tiles[grid[y][x]])
-                        rotates = 0
-                        flips += 1
-                    else:
-                        print(rotates)
-                        assert rotates <= 4
-                        rotate_left(tiles[grid[y][x]])
-                        rotates += 1
 
-        grid2 = []
-
-        for y, row in enumerate(grid):
-            tile_size = len(tiles[row[0]][LINES]) - 2
+        # Place tiles on grid, stripping edges
+        habitat_grid = []
+        for y, row in enumerate(tile_grid):
+            tile_size = len(tiles[row[0]].grid) - 2
             for _ in range(tile_size):
-                grid2.append([])
+                habitat_grid.append([])
             for x, tile_id in enumerate(row):
-                for i, tile_row in enumerate(tiles[tile_id][LINES][1:-1]):
-                    grid2[y * tile_size + i].extend(tile_row[1:-1])
-        for row in grid2:
-            print(''.join(row))
+                for i, tile_row in enumerate(tiles[tile_id].grid[1:-1]):
+                    habitat_grid[y * tile_size + i].extend(tile_row[1:-1])
 
-        sea_monster = '''\
-                  # 
-#    ##    ##    ###
- #  #  #  #  #  #   '''.splitlines()
-        sea_monster_coords = []
-        for y, line in enumerate(sea_monster):
-            for x, c in enumerate(line):
-                if c == '#':
-                    sea_monster_coords.append((y, x))
-        print(sea_monster_coords)
-
-        rotations = 0
+        # Search for sea monsters
+        sea_monster_coords = get_sea_monster_coords()
         sea_monsters = []
-        while rotations < 4:
-            sea_monsters_found = False
-            for y, row in enumerate(grid2):
-                for x, c in enumerate(row):
-                    found = True
-                    for my, mx in sea_monster_coords:
-                        try:
-                            if grid2[y + my][x + mx] != '#':
-                                found = False
-                                break
-                        except IndexError:
-                            found = False
-                            break
-                    if found:
-                        print(f"Sea monster found at {y, x}")
-                        sea_monsters.append((y, x))
-                        sea_monsters_found = True
-            if sea_monsters_found:
+        for tile_grid in chargrid.symmetries(habitat_grid):
+            sea_monsters = search_for_sea_monsters(tile_grid, sea_monster_coords)
+            if sea_monsters:
                 break
-            print('rotating grid')
-            grid2 = rotate_grid(grid2)
-            rotations += 1
 
-        pprint(sea_monsters)
-
-        smc = Counter()
-        for row in sea_monster:
-            for x in row:
-                smc.update(x)
-
+        # Determine how rough the waters are
         c = Counter()
-        for row in grid2:
+        for row in habitat_grid:
             for x in row:
                 c.update(x)
-        print(c, smc)
-
-        print(c['#'] - smc['#'] * len(sea_monsters))
-
-        return c['#'] - smc['#'] * len(sea_monsters)
+        return c['#'] - len(sea_monster_coords) * len(sea_monsters)
 
     def run(self):
         print(f'Part 1 Answer: {self.part1()}')
