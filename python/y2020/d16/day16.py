@@ -1,7 +1,7 @@
 
 from collections import *
 
-from .. import puzzle
+from lib import puzzle
 
 Rule = namedtuple('Rule', ['field', 'ranges'])
 

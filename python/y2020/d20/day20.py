@@ -5,9 +5,7 @@ from functools import cached_property, reduce
 
 import networkx as nx
 
-from lib import chargrid
-
-from .. import puzzle
+from lib import chargrid, puzzle
 
 SEA_MONSTER = '''\
                   #

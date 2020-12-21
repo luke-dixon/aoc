@@ -2,7 +2,7 @@ import math
 from functools import reduce
 from itertools import combinations
 
-from .. import puzzle
+from lib import puzzle
 
 
 class Day13(puzzle.Puzzle):

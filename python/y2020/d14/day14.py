@@ -1,4 +1,4 @@
-from .. import puzzle
+from lib import puzzle
 
 
 def update_memory1(mem, line, current_mask: str):
@@ -15,23 +15,17 @@ def update_memory2(mem, line, current_mask):
     orig_address = int(line[len("mem["):line.find(']')])
     value = int(line[line.find('=') + 2:])
 
+    orig_address |= int(current_mask.replace('X', '0'), 2)
+
     addresses = {orig_address}
     for i, b in enumerate(reversed(current_mask)):
         new_addresses = set()
         for address in addresses:
-            if b == '1':
-                address |= 2 ** i
-                new_addresses.add(address)
-            elif b == 'X':
-                new_address = address | 2 ** i
-                new_addresses.add(new_address)
-                new_address = address & ((1 << 36) - 1) - 2 ** i
-                new_addresses.add(new_address)
-            elif b == '0':
-                new_addresses.add(address)
-            else:
-                assert False
-        addresses = new_addresses
+            if b == 'X':
+                new_addresses.add(address | 2 ** i)
+                new_addresses.add(address & (((1 << 36) - 1) - 2 ** i))
+        if new_addresses:
+            addresses = new_addresses
 
     for address in addresses:
         mem[address] = value
