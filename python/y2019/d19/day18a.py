@@ -1,11 +1,9 @@
-import math
 import random
-from collections import defaultdict, deque
-from functools import lru_cache
+from collections import deque
 
 import networkx as nx
 
-from .. import puzzle, intcode
+from lib import puzzle
 
 
 def draw_grid(grid):

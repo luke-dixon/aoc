@@ -4,7 +4,8 @@ from collections import defaultdict, deque
 
 import networkx as nx
 
-from .. import intcode, puzzle
+from .. import intcode
+from lib import puzzle
 
 
 class GridInputDevice(intcode.InputDevice):

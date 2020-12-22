@@ -1,7 +1,8 @@
 from collections import namedtuple
 from typing import List
 
-from .. import geometry, puzzle
+from .. import geometry
+from lib import puzzle
 
 Payload = namedtuple('Payload', ['origin', 'distance_by_wire'])
 

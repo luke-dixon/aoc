@@ -1,11 +1,8 @@
 import math
-import queue
-from abc import ABC
 from collections import Counter, defaultdict
-from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Union
 
-from .. import intcode, puzzle
+from .. import intcode
+from lib import puzzle
 
 flipper_location = (0, 0)
 ball_location = (0, 0)

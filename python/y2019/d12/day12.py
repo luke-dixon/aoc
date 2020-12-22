@@ -1,10 +1,10 @@
 import itertools
 import re
-import sys
 import time
 from collections import deque
 
-from .. import geometry, math, puzzle
+from .. import geometry, math
+from lib import puzzle
 
 
 class Moon:

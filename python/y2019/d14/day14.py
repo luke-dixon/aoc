@@ -1,6 +1,6 @@
 from collections import deque
 
-from .. import puzzle
+from lib import puzzle
 
 
 class Day14(puzzle.Puzzle):

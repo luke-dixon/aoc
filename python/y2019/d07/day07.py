@@ -2,7 +2,8 @@ import itertools
 import queue
 import threading
 
-from .. import intcode, puzzle
+from .. import intcode
+from lib import puzzle
 
 
 class Day07(puzzle.Puzzle):

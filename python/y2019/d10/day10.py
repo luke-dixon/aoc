@@ -1,7 +1,8 @@
 import math
 import operator
 
-from .. import geometry, puzzle
+from .. import geometry
+from lib import puzzle
 
 
 class Day10(puzzle.Puzzle):

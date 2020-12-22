@@ -2,7 +2,7 @@ from collections import Counter
 from collections.abc import Sequence
 from math import inf
 
-from .. import puzzle
+from lib import puzzle
 
 
 def format_layer(layer, width=25, height=6):

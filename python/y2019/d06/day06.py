@@ -2,7 +2,7 @@ from collections import defaultdict
 
 import networkx
 
-from .. import puzzle
+from lib import puzzle
 
 
 class Day06(puzzle.Puzzle):

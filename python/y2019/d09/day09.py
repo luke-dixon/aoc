@@ -1,6 +1,7 @@
 from collections import defaultdict
 
-from .. import intcode, puzzle
+from .. import intcode
+from lib import puzzle
 
 
 class Day09(puzzle.Puzzle):

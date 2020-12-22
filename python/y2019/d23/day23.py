@@ -1,9 +1,9 @@
-import itertools
 import queue
 import threading
 from collections import defaultdict, deque
 
-from .. import intcode, puzzle
+from .. import intcode
+from lib import puzzle
 
 
 class QueueInputDevice(intcode.InputDevice):

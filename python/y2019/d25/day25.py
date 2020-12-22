@@ -1,9 +1,8 @@
 import itertools
-import queue
-import threading
 from collections import defaultdict
 
-from .. import intcode, puzzle
+from .. import intcode
+from lib import puzzle
 
 
 class GridOutputDevice(intcode.OutputDevice):

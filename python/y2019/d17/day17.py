@@ -1,9 +1,7 @@
-import time
-from collections import deque, defaultdict
+from collections import defaultdict
 
-from .. import puzzle, intcode
-
-import networkx as nx
+from .. import intcode
+from lib import puzzle
 
 
 class GridInputDevice(intcode.InputDevice):

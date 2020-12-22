@@ -1,10 +1,6 @@
-import itertools
-import queue
-import threading
-from collections import defaultdict, deque
 from functools import lru_cache
 
-from .. import intcode, puzzle
+from lib import puzzle
 
 
 def calc_biodiversity(grid):

@@ -2,7 +2,7 @@ from collections import deque, namedtuple
 from collections.abc import Mapping
 from typing import Deque, Dict, Iterator, Tuple
 
-from .. import puzzle
+from lib import puzzle
 
 
 class Grid(Mapping):

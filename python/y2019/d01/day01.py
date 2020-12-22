@@ -1,6 +1,6 @@
 from typing import List
 
-from .. import puzzle
+from lib import puzzle
 
 
 def calc_fuel(x: int, recursive: bool = False):

@@ -3,7 +3,8 @@ import shelve
 from collections import Mapping, defaultdict
 from typing import Iterator
 
-from .. import intcode, puzzle
+from .. import intcode
+from lib import puzzle
 
 
 class Beam(Mapping):

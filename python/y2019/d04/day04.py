@@ -1,4 +1,4 @@
-from .. import puzzle
+from lib import puzzle
 
 
 def part1(data: str):

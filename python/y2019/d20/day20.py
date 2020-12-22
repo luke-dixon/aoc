@@ -3,7 +3,8 @@ from collections.abc import Mapping
 from functools import cached_property
 from typing import Dict, Iterator, List, Tuple
 
-from .. import bfs, math, puzzle
+from .. import bfs, math
+from lib import puzzle
 
 
 class Grid(Mapping):

@@ -1,4 +1,4 @@
-from .. import puzzle
+from lib import puzzle
 
 
 def new_deck(n=10):

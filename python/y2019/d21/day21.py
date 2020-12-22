@@ -1,10 +1,7 @@
-import itertools
-from collections import namedtuple, defaultdict
-from collections.abc import Mapping
-from functools import cached_property
-from typing import Dict, Iterator, List, Tuple
+from collections import defaultdict
 
-from .. import bfs, intcode, math, puzzle
+from .. import intcode
+from lib import puzzle
 
 
 class GridInputDevice(intcode.InputDevice):

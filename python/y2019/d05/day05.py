@@ -1,4 +1,5 @@
-from .. import intcode, puzzle
+from .. import intcode
+from lib import puzzle
 
 
 class Day05(puzzle.Puzzle):
