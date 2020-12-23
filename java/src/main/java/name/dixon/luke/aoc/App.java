@@ -19,6 +19,7 @@ public class App {
             entry("2020.06", new Y2020Day06()),
             entry("2020.07", new Y2020Day07()),
             entry("2020.08", new Y2020Day08()),
+            entry("2020.09", new Y2020Day09()),
             entry("2020.23", new Y2020Day23())
     );
 
