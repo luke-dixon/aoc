@@ -1,3 +1,8 @@
+from typing import List
+
+from lib import puzzle
+
+
 def part1_update_strategy(instruction_value):
     return instruction_value + 1
 
@@ -17,13 +22,13 @@ def run(data, update_strategy):
         return steps
 
 
-def main():
-    with open('input5.txt') as f:
-        data = [int(n) for n in f.read().splitlines()]
+class Day05(puzzle.Puzzle):
+    year = '2017'
+    day = '5'
 
-    print('Day 5 part 1 Answer: {0}'.format(run(list(data), part1_update_strategy)))
-    print('Day 5 part 2 Answer: {0}'.format(run(list(data), part2_update_strategy)))
-    
+    def get_data(self) -> List[int]:
+        return [int(n) for n in self.input_data.splitlines()]
 
-if __name__ == "__main__":
-    main()
+    def run(self):
+        print(f'Part 1 Answer: {run(self.get_data(), part1_update_strategy)}')
+        print(f'Part 2 Answer: {run(self.get_data(), part2_update_strategy)}')

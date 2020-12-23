@@ -1,5 +1,6 @@
 from collections import deque
-from queue import Queue
+
+from lib import puzzle
 
 
 def play_sound(reg, args):
@@ -63,12 +64,6 @@ def jgz(reg, args):
     return 1
 
 
-with open('input18.txt') as f:
-    data = [tuple(y.split(' ')) for y in [x.strip() for x in f.readlines()]]
-
-registers = {chr(a): 0 for a in range(ord('a'), ord('z') + 1)}
-registers['freq'] = 0
-
 instructions = {
     'snd': play_sound,
     'set': set_,
@@ -78,43 +73,6 @@ instructions = {
     'rcv': rcv,
     'jgz': jgz,
 }
-
-last_recovered_frequency = 0
-i = 0
-while -1 < i < len(data):
-    old_i = i
-    instruction = instructions[data[i][0]]
-    i += instruction(registers, data[i][1:])
-    if data[old_i][0] == 'rcv':
-        if registers[data[old_i][1]] != 0:
-            last_recovered_frequency = registers[data[old_i][1]]
-            break
-
-print(f'Day 18 Part 1 Answer: {last_recovered_frequency}')
-
-registers0 = {chr(a): 0 for a in range(ord('a'), ord('z') + 1)}
-registers1 = {chr(a): 0 for a in range(ord('a'), ord('z') + 1)}
-
-registers0['p'] = 0
-registers1['p'] = 1
-
-registers0['next_instruction'] = 0
-registers1['next_instruction'] = 0
-
-registers0['blocked'] = 0
-registers1['blocked'] = 0
-
-registers0['terminated'] = False
-registers1['terminated'] = False
-
-registers0['snd_queue'] = deque()
-registers1['snd_queue'] = deque()
-
-registers0['rcv_queue'] = registers1['snd_queue']
-registers1['rcv_queue'] = registers0['snd_queue']
-
-registers0['snd_count'] = 0
-registers1['snd_count'] = 0
 
 
 def run_process(reg, program, instructions):
@@ -150,15 +108,71 @@ def new_rcv(reg, args):
         return 0
 
 
-instructions['snd'] = new_snd
-instructions['rcv'] = new_rcv
+class Day18(puzzle.Puzzle):
+    year = '2017'
+    day = '18'
 
+    def get_data(self):
+        data = self.input_data
+        return [tuple(y.split(' ')) for y in data.splitlines()]
 
-while not registers0['terminated'] and not registers1['terminated']:
-    if registers0['blocked'] > 2 and registers1['blocked'] > 2:
-        break
-    run_process(registers0, data, instructions)
-    run_process(registers1, data, instructions)
+    def part1(self):
+        data = self.get_data()
 
+        registers = {chr(a): 0 for a in range(ord('a'), ord('z') + 1)}
+        registers['freq'] = 0
 
-print(f"Day 18 Part 2 Answer: {registers1['snd_count']}")
+        last_recovered_frequency = 0
+        i = 0
+        while -1 < i < len(data):
+            old_i = i
+            instruction = instructions[data[i][0]]
+            i += instruction(registers, data[i][1:])
+            if data[old_i][0] == 'rcv':
+                if registers[data[old_i][1]] != 0:
+                    last_recovered_frequency = registers[data[old_i][1]]
+                    break
+
+        return last_recovered_frequency
+
+    def part2(self):
+        data = self.get_data()
+
+        registers0 = {chr(a): 0 for a in range(ord('a'), ord('z') + 1)}
+        registers1 = {chr(a): 0 for a in range(ord('a'), ord('z') + 1)}
+
+        registers0['p'] = 0
+        registers1['p'] = 1
+
+        registers0['next_instruction'] = 0
+        registers1['next_instruction'] = 0
+
+        registers0['blocked'] = 0
+        registers1['blocked'] = 0
+
+        registers0['terminated'] = False
+        registers1['terminated'] = False
+
+        registers0['snd_queue'] = deque()
+        registers1['snd_queue'] = deque()
+
+        registers0['rcv_queue'] = registers1['snd_queue']
+        registers1['rcv_queue'] = registers0['snd_queue']
+
+        registers0['snd_count'] = 0
+        registers1['snd_count'] = 0
+
+        instructions['snd'] = new_snd
+        instructions['rcv'] = new_rcv
+
+        while not registers0['terminated'] and not registers1['terminated']:
+            if registers0['blocked'] > 2 and registers1['blocked'] > 2:
+                break
+            run_process(registers0, data, instructions)
+            run_process(registers1, data, instructions)
+
+        return registers1['snd_count']
+
+    def run(self):
+        print(f'Part 1 Answer: {self.part1()}')
+        print(f'Part 2 Answer: {self.part2()}')

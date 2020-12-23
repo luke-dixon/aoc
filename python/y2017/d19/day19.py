@@ -1,7 +1,7 @@
-from collections import namedtuple
-from enum import Enum
 import time
-import sys
+from enum import Enum
+
+from lib import puzzle
 
 
 letters = [chr(x) for x in range(ord('A'), ord('Z') + 1)]
@@ -85,7 +85,7 @@ def find_next(grid, current, previous, graph):
 
     # Only one choice
     if len(options) == 1:
-        option = options.pop() 
+        option = options.pop()
         packet = Packet(option.value[0] + current.y, option.value[1] + current.x, option, current.letters)
         return packet
 
@@ -97,7 +97,7 @@ def find_next(grid, current, previous, graph):
 
     # Only one choice
     if len(options) == 1:
-        option = options.pop() 
+        option = options.pop()
         packet = Packet(option.value[0] + current.y, option.value[1] + current.x, option, current.letters)
         return packet
 
@@ -123,7 +123,7 @@ def find_next(grid, current, previous, graph):
 
     # Only one choice
     if len(options) == 1:
-        option = options.pop() 
+        option = options.pop()
         packet = Packet(option.value[0] + current.y, option.value[1] + current.x, option, current.letters)
         return packet
 
@@ -131,45 +131,56 @@ def find_next(grid, current, previous, graph):
     return current
 
 
-with open('input19.txt') as f:
-    grid = [x.strip('\n') for x in f.readlines()]
+class Day19(puzzle.Puzzle):
+    year = '2017'
+    day = '19'
 
+    def add_additional_args(self, parser):
+        parser.add_argument('-d', '--draw', action='store_true')
 
-# assume the grid is square
-assert len(grid) == len(grid[0])
+    def get_data(self):
+        data = self.input_data
+        return data.splitlines()
 
+    def part1and2(self):
+        grid = self.get_data()
 
-packet = Packet()
-packet.y, packet.x = find_start(grid)
+        # assume the grid is square
+        assert len(grid) == len(grid[0])
 
-done = False
-prev = None
+        packet = Packet()
+        packet.y, packet.x = find_start(grid)
 
-decisions = {}
-print_location(grid, packet)
-steps = 1
+        done = False
+        prev = None
 
-draw = False
-if sys.argv[-1] == '-d':
-    draw = True
-draw_delay = 0.08
-
-while packet != prev:
-    current = Packet(packet.y, packet.x, packet.direction, packet.letters)
-    next_packet = find_next(grid, current, prev, decisions)
-    prev = current
-    packet = next_packet
-    if grid[packet.y][packet.x] in letters and packet != prev:
-        packet.letters.append(grid[packet.y][packet.x])
-    if packet != prev:
-        steps += 1
-    if draw:
+        decisions = {}
         print_location(grid, packet)
-        if current.direction in [Direction.LEFT, Direction.RIGHT]:
-            time.sleep(0.6 * draw_delay)
-        else:
-            time.sleep(draw_delay)
+        steps = 1
 
-print_location(grid, packet)
-print('Day 19 Part 1 Answer: ', ''.join(packet.letters))
-print(f'Day 19 Part 1 Answer: {steps}')
+        draw_delay = 0.08
+
+        while packet != prev:
+            current = Packet(packet.y, packet.x, packet.direction, packet.letters)
+            next_packet = find_next(grid, current, prev, decisions)
+            prev = current
+            packet = next_packet
+            if grid[packet.y][packet.x] in letters and packet != prev:
+                packet.letters.append(grid[packet.y][packet.x])
+            if packet != prev:
+                steps += 1
+            if self.args.draw:
+                print_location(grid, packet)
+                if current.direction in [Direction.LEFT, Direction.RIGHT]:
+                    time.sleep(0.6 * draw_delay)
+                else:
+                    time.sleep(draw_delay)
+
+        print_location(grid, packet)
+
+        return ''.join(packet.letters), steps
+
+    def run(self):
+        answer1, answer2 = self.part1and2()
+        print(f'Part 1 Answer: {answer1}')
+        print(f'Part 2 Answer: {answer2}')

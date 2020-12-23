@@ -1,5 +1,6 @@
-import sys
 from enum import Enum
+
+from lib import puzzle
 
 
 class Direction(Enum):
@@ -96,49 +97,57 @@ def print_grid(grid, carrier):
             print(' '.join(row.decode('utf8')))
 
 
-with open('input22.txt') as f:
-    data = f.readlines()
+class Day22(puzzle.Puzzle):
+    year = '2017'
+    day = '22'
 
-grid = [bytearray(x.strip('\n'), 'utf8') for x in data]
+    def add_additional_args(self, parser):
+        parser.add_argument('-d', '--draw', action='store_true')
 
-carrier = Carrier(y=len(grid) // 2, x=len(grid[0]) // 2)
-if sys.argv[-1] == '-p':
-    print_grid(grid, carrier)
-    print(carrier)
+    def get_data(self):
+        data = self.input_data
+        return data.splitlines()
 
-i = 0
-while i < 10000:
-    carrier.move(grid)
-    i += 1
+    def part1(self):
+        grid = [bytearray(x.strip('\n'), 'utf8') for x in self.get_data()]
 
-if sys.argv[-1] == '-p':
-    print_grid(grid, carrier)
-    print(carrier)
+        carrier = Carrier(y=len(grid) // 2, x=len(grid[0]) // 2)
+        if self.args.draw:
+            print_grid(grid, carrier)
+            print(carrier)
 
-print(f'Day 19 Part 1 Answer: {carrier.infected_bursts} / {carrier.bursts}')
+        i = 0
+        while i < 10000:
+            carrier.move(grid)
+            i += 1
 
+        if self.args.draw:
+            print_grid(grid, carrier)
+            print(carrier)
+        return f'{carrier.infected_bursts} / {carrier.bursts}'
 
-# Start over with fresh data
-with open('input22.txt') as f:
-    data = f.readlines()
+    def part2(self):
+        grid2 = [bytearray(x.strip('\n'), 'utf8') for x in self.get_data()]
 
-grid2 = [bytearray(x.strip('\n'), 'utf8') for x in data]
+        carrier2 = Carrier(y=len(grid2) // 2, x=len(grid2[0]) // 2)
+        carrier2.cell_state = {
+            '.': ('W', turn_left),
+            'W': ('#', turn_straight),
+            '#': ('F', turn_right),
+            'F': ('.', turn_around),
+        }
 
-carrier2 = Carrier(y=len(grid2) // 2, x=len(grid2[0]) // 2)
-carrier2.cell_state = {
-    '.': ('W', turn_left),
-    'W': ('#', turn_straight),
-    '#': ('F', turn_right),
-    'F': ('.', turn_around),
-}
+        i = 0
+        while i < 10000000:
+            carrier2.move(grid2)
+            i += 1
 
-i = 0
-while i < 10000000:
-    carrier2.move(grid2)
-    i += 1
+        if self.args.draw:
+            print_grid(grid2, carrier2)
+            print(carrier2)
 
-if sys.argv[-1] == '-p':
-    print_grid(grid2, carrier2)
-    print(carrier2)
+        return f'{carrier2.infected_bursts} / {carrier2.bursts}'
 
-print(f'Day 19 Part 2 Answer: {carrier2.infected_bursts} / {carrier2.bursts}')
+    def run(self):
+        print(f'Part 1 Answer: {self.part1()}')
+        print(f'Part 2 Answer: {self.part2()}')
