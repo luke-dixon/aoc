@@ -2,8 +2,9 @@ import itertools
 import re
 import time
 from collections import deque
+from math import lcm
 
-from .. import geometry, math
+from .. import geometry
 from lib import puzzle
 
 
@@ -34,7 +35,7 @@ class Moon:
         return self.potential_energy() * self.kinetic_energy()
 
     def __repr__(self):
-        return f'Moon(position={repr(self.position)}, velocity={repr(self.velocity)}, path={len(self.path) // 2})'
+        return f'Moon(position={repr(self.position)}, velocity={repr(self.velocity)})'
 
 
 def draw_moons(moons, dimensions):
@@ -125,7 +126,6 @@ class Day12(puzzle.Puzzle):
     def get_data(self):
         cleaned_data = []
         data = self.input_data
-        data = '''<x=-9, y=-1, z=-1>\n<x=2, y=9, z=5>\n<x=10, y=18, z=-12>\n<x=-6, y=15, z=-7>'''
         for d in data.splitlines():
             m = re.search(r'<x=(-?\d+), y=(-?\d+), z=(-?\d+)>', d)
             cleaned_data.append(
@@ -178,16 +178,15 @@ class Day12(puzzle.Puzzle):
             moons = self.get_moons2(axis)
 
             while not all([moon.stabilised for moon in moons]):
-
                 for moon, other_moon in itertools.permutations(moons, 2):
                     moon.add_velocity(other_moon)
 
                 for moon in moons:
                     moon.apply_velocity()
 
-            lcms.append(math.lcmv([moon.steps for moon in moons]))
+            lcms.append(lcm(*[moon.steps for moon in moons]))
 
-        return math.lcmv(lcms)
+        return lcm(*lcms)
 
     def run(self):
         print(f'Part 1 Answer: {self.part1()}')
